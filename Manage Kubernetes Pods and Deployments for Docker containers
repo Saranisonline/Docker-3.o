@@ -1,0 +1,1159 @@
+# Practical 10: Manage Kubernetes Pods and Deployments for Docker Containers
+
+## 1. Aim
+
+To create, manage, and scale **Kubernetes Pods and Deployments** for a Docker-based web application.
+
+### Workflow
+
+```text
+Docker Image
+     │
+     ▼
+Kubernetes Deployment
+     │
+     ▼
+┌───────────────┐
+│     Pod 1     │
+│ Docker        │
+│ Container     │
+└───────────────┘
+     │
+     ├── Scale
+     ▼
+┌───────────────┐
+│     Pod 2     │
+│ Docker        │
+│ Container     │
+└───────────────┘
+```
+
+---
+
+# 2. Basic Concepts
+
+Before doing the practical, remember these three terms.
+
+### Docker Image
+
+The packaged application:
+
+```text
+docker-web-app
+```
+
+### Pod
+
+A **Pod** is the basic execution unit in Kubernetes. It runs one or more containers.
+
+For this practical:
+
+```text
+Pod
+ └── Docker container
+       └── Nginx web application
+```
+
+### Deployment
+
+A **Deployment** manages Pods.
+
+It can:
+
+- Create Pods
+- Maintain the desired number of Pods
+- Restart failed Pods
+- Scale the application
+- Perform updates
+
+So:
+
+```text
+Deployment
+    │
+    ├── Pod
+    ├── Pod
+    └── Pod
+```
+
+---
+
+# 3. Software Required
+
+For a beginner-friendly Windows practical, use **Docker Desktop with Kubernetes enabled**.
+
+You need:
+
+- Docker Desktop
+- Kubernetes
+- `kubectl`
+- Web browser
+- Command Prompt/PowerShell
+
+Check Docker:
+
+```bash
+docker --version
+```
+
+Check Kubernetes:
+
+```bash
+kubectl version --client
+```
+
+Then:
+
+```bash
+kubectl get nodes
+```
+
+If Kubernetes is working, you should see something similar to:
+
+```text
+NAME             STATUS   ROLES           AGE
+docker-desktop   Ready    control-plane   ...
+```
+
+If you see:
+
+```text
+The connection to the server was refused
+```
+
+Kubernetes is not running yet.
+
+---
+
+# 4. Enable Kubernetes in Docker Desktop
+
+Open **Docker Desktop**.
+
+Go to:
+
+```text
+Settings
+   ↓
+Kubernetes
+```
+
+Enable:
+
+```text
+Enable Kubernetes
+```
+
+Apply/restart Docker Desktop.
+
+Wait until Kubernetes becomes ready.
+
+Then run:
+
+```bash
+kubectl get nodes
+```
+
+Expected:
+
+```text
+NAME             STATUS   ROLES           AGE
+docker-desktop   Ready    control-plane   ...
+```
+
+---
+
+# 5. Create the Docker Web Application
+
+We will use the same type of application from the previous Docker practical.
+
+Create:
+
+```text
+kubernetes-demo/
+│
+├── Dockerfile
+└── index.html
+```
+
+---
+
+# 6. Create `index.html`
+
+Create:
+
+```text
+index.html
+```
+
+Add:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kubernetes Demo</title>
+</head>
+<body>
+
+    <h1>Hello from Kubernetes!</h1>
+
+    <p>This web application is running inside a Kubernetes Pod.</p>
+
+</body>
+</html>
+```
+
+---
+
+# 7. Create the Dockerfile
+
+Create:
+
+```text
+Dockerfile
+```
+
+Add:
+
+```dockerfile
+FROM nginx:alpine
+
+COPY index.html /usr/share/nginx/html/index.html
+
+EXPOSE 80
+```
+
+---
+
+# 8. Build the Docker Image
+
+Open PowerShell inside the project directory.
+
+Run:
+
+```bash
+docker build -t kubernetes-web-app .
+```
+
+Verify:
+
+```bash
+docker images
+```
+
+You should see:
+
+```text
+REPOSITORY             TAG
+kubernetes-web-app     latest
+```
+
+---
+
+# 9. Important Docker Desktop Point
+
+Because we are using **Kubernetes inside Docker Desktop**, the Kubernetes cluster can use images built into Docker Desktop's local image store.
+
+So for this lab, we can use:
+
+```text
+kubernetes-web-app:latest
+```
+
+without pushing it to Docker Hub.
+
+---
+
+# 10. Create a Kubernetes Deployment
+
+Create a file:
+
+```text
+deployment.yaml
+```
+
+Add:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: kubernetes-web-deployment
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: kubernetes-web
+
+  template:
+    metadata:
+      labels:
+        app: kubernetes-web
+
+    spec:
+      containers:
+        - name: web-container
+          image: kubernetes-web-app:latest
+
+          ports:
+            - containerPort: 80
+
+      imagePullPolicy: IfNotPresent
+```
+
+---
+
+# 11. Understand the Deployment File
+
+### API version
+
+```yaml
+apiVersion: apps/v1
+```
+
+Specifies the Kubernetes API version.
+
+### Kind
+
+```yaml
+kind: Deployment
+```
+
+Tells Kubernetes that this file defines a Deployment.
+
+### Name
+
+```yaml
+name: kubernetes-web-deployment
+```
+
+The Deployment is named:
+
+```text
+kubernetes-web-deployment
+```
+
+### Replicas
+
+```yaml
+replicas: 2
+```
+
+This tells Kubernetes:
+
+> Keep **2 Pods** running.
+
+### Container image
+
+```yaml
+image: kubernetes-web-app:latest
+```
+
+This is the Docker image that the Pods will run.
+
+### Container port
+
+```yaml
+containerPort: 80
+```
+
+The Nginx container listens on port 80.
+
+---
+
+# 12. Create the Deployment
+
+Run:
+
+```bash
+kubectl apply -f deployment.yaml
+```
+
+Expected:
+
+```text
+deployment.apps/kubernetes-web-deployment created
+```
+
+---
+
+# 13. Check the Deployment
+
+Run:
+
+```bash
+kubectl get deployments
+```
+
+Expected:
+
+```text
+NAME                      READY   UP-TO-DATE   AVAILABLE
+kubernetes-web-deployment 2/2     2            2
+```
+
+The important part is:
+
+```text
+2/2
+```
+
+That means two requested Pods are ready.
+
+---
+
+# 14. Check the Pods
+
+Run:
+
+```bash
+kubectl get pods
+```
+
+You should see something similar to:
+
+```text
+NAME                                      READY   STATUS    RESTARTS
+kubernetes-web-deployment-xxxxx-xxxxx     1/1     Running   0
+kubernetes-web-deployment-xxxxx-yyyyy     1/1     Running   0
+```
+
+Your actual Pod names will be different.
+
+---
+
+# 15. Understand the Pod Names
+
+Kubernetes automatically generates names such as:
+
+```text
+kubernetes-web-deployment-7c9f6d8f5f-abc12
+```
+
+The structure is roughly:
+
+```text
+Deployment name + ReplicaSet identifier + Pod identifier
+```
+
+You normally don't manually choose these Pod names when using a Deployment.
+
+---
+
+# 16. Get More Information About Pods
+
+Run:
+
+```bash
+kubectl get pods -o wide
+```
+
+This shows additional information such as:
+
+- Pod IP
+- Node
+- Status
+
+---
+
+# 17. Describe a Pod
+
+Choose one Pod name from:
+
+```bash
+kubectl get pods
+```
+
+Then:
+
+```bash
+kubectl describe pod POD_NAME
+```
+
+For example:
+
+```bash
+kubectl describe pod kubernetes-web-deployment-xxxxx-xxxxx
+```
+
+This is useful for troubleshooting.
+
+---
+
+# 18. Create a Kubernetes Service
+
+The Pods are running, but we need a way to access the application.
+
+Create:
+
+```text
+service.yaml
+```
+
+Add:
+
+```yaml
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: kubernetes-web-service
+
+spec:
+  type: NodePort
+
+  selector:
+    app: kubernetes-web
+
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+```
+
+---
+
+# 19. Understand the Service
+
+The Deployment creates Pods.
+
+The Service provides network access to those Pods.
+
+```text
+Browser
+   │
+   ▼
+Service
+   │
+   ├──── Pod 1
+   │
+   └──── Pod 2
+```
+
+The important section is:
+
+```yaml
+selector:
+  app: kubernetes-web
+```
+
+It finds Pods having:
+
+```yaml
+app: kubernetes-web
+```
+
+---
+
+# 20. Create the Service
+
+Run:
+
+```bash
+kubectl apply -f service.yaml
+```
+
+Expected:
+
+```text
+service/kubernetes-web-service created
+```
+
+Check:
+
+```bash
+kubectl get services
+```
+
+You should see something similar to:
+
+```text
+NAME                     TYPE       CLUSTER-IP     PORT(S)
+kubernetes-web-service   NodePort   10.x.x.x       80:30080/TCP
+```
+
+---
+
+# 21. Access the Application
+
+With Docker Desktop Kubernetes, try:
+
+```text
+http://localhost:30080
+```
+
+You should see:
+
+```text
+Hello from Kubernetes!
+
+This web application is running inside a Kubernetes Pod.
+```
+
+🎉 Your Docker-based web application is now running through Kubernetes.
+
+---
+
+# 22. Scale the Deployment
+
+This is an important part of the practical.
+
+Currently:
+
+```text
+replicas: 2
+```
+
+Check:
+
+```bash
+kubectl get pods
+```
+
+You should have 2 Pods.
+
+Now scale to 4:
+
+```bash
+kubectl scale deployment kubernetes-web-deployment --replicas=4
+```
+
+Check:
+
+```bash
+kubectl get pods
+```
+
+You should now have:
+
+```text
+4 Pods
+```
+
+Check the Deployment:
+
+```bash
+kubectl get deployment
+```
+
+Expected:
+
+```text
+NAME                      READY
+kubernetes-web-deployment 4/4
+```
+
+---
+
+# 23. Scale Down
+
+You can also reduce the number of Pods:
+
+```bash
+kubectl scale deployment kubernetes-web-deployment --replicas=2
+```
+
+Check:
+
+```bash
+kubectl get pods
+```
+
+You should return to:
+
+```text
+2 Pods
+```
+
+---
+
+# 24. Test Self-Healing
+
+This is one of the biggest advantages of a Deployment.
+
+First check the Pods:
+
+```bash
+kubectl get pods
+```
+
+Select one Pod and delete it:
+
+```bash
+kubectl delete pod POD_NAME
+```
+
+For example:
+
+```bash
+kubectl delete pod kubernetes-web-deployment-xxxxx-xxxxx
+```
+
+Now immediately run:
+
+```bash
+kubectl get pods
+```
+
+You will notice Kubernetes creates a replacement Pod.
+
+Eventually:
+
+```text
+READY
+2/2
+```
+
+again.
+
+### Why?
+
+Because the Deployment says:
+
+```yaml
+replicas: 2
+```
+
+Kubernetes continuously tries to maintain the desired state.
+
+---
+
+# 25. View Deployment Details
+
+Run:
+
+```bash
+kubectl describe deployment kubernetes-web-deployment
+```
+
+This displays:
+
+- Desired replicas
+- Current replicas
+- Available replicas
+- Pod template
+- Events
+
+---
+
+# 26. View Pod Logs
+
+Get a Pod name:
+
+```bash
+kubectl get pods
+```
+
+Then:
+
+```bash
+kubectl logs POD_NAME
+```
+
+For example:
+
+```bash
+kubectl logs kubernetes-web-deployment-xxxxx-xxxxx
+```
+
+This can help you troubleshoot your web container.
+
+---
+
+# 27. Execute a Command Inside a Pod
+
+You can enter the running container:
+
+```bash
+kubectl exec -it POD_NAME -- /bin/sh
+```
+
+For example:
+
+```bash
+kubectl exec -it kubernetes-web-deployment-xxxxx-xxxxx -- /bin/sh
+```
+
+You will get a shell inside the Nginx container.
+
+You can check the webpage:
+
+```bash
+ls /usr/share/nginx/html
+```
+
+You should see:
+
+```text
+index.html
+```
+
+Exit:
+
+```bash
+exit
+```
+
+---
+
+# 28. Update the Application
+
+Suppose you change:
+
+```html
+<h1>Hello from Kubernetes!</h1>
+```
+
+to:
+
+```html
+<h1>Kubernetes Deployment Updated!</h1>
+```
+
+Build a new Docker image:
+
+```bash
+docker build -t kubernetes-web-app:v2 .
+```
+
+Then update the Deployment:
+
+```bash
+kubectl set image deployment/kubernetes-web-deployment web-container=kubernetes-web-app:v2
+```
+
+Check:
+
+```bash
+kubectl rollout status deployment/kubernetes-web-deployment
+```
+
+Expected:
+
+```text
+deployment "kubernetes-web-deployment" successfully rolled out
+```
+
+---
+
+# 29. Check the Updated Pods
+
+Run:
+
+```bash
+kubectl get pods
+```
+
+Kubernetes will gradually replace the old Pods with Pods running the new image.
+
+This is called a **rolling update**.
+
+---
+
+# 30. View Deployment History
+
+Run:
+
+```bash
+kubectl rollout history deployment/kubernetes-web-deployment
+```
+
+This allows you to see previous Deployment revisions.
+
+---
+
+# 31. Roll Back a Deployment
+
+If the new version has a problem:
+
+```bash
+kubectl rollout undo deployment/kubernetes-web-deployment
+```
+
+Check:
+
+```bash
+kubectl rollout status deployment/kubernetes-web-deployment
+```
+
+Kubernetes rolls back to the previous revision.
+
+---
+
+# 32. Useful Kubernetes Commands
+
+### View nodes
+
+```bash
+kubectl get nodes
+```
+
+### View Deployments
+
+```bash
+kubectl get deployments
+```
+
+### View Pods
+
+```bash
+kubectl get pods
+```
+
+### View Services
+
+```bash
+kubectl get services
+```
+
+### View everything
+
+```bash
+kubectl get all
+```
+
+### Describe a Pod
+
+```bash
+kubectl describe pod POD_NAME
+```
+
+### View Pod logs
+
+```bash
+kubectl logs POD_NAME
+```
+
+### Scale Deployment
+
+```bash
+kubectl scale deployment kubernetes-web-deployment --replicas=4
+```
+
+### Delete a Pod
+
+```bash
+kubectl delete pod POD_NAME
+```
+
+### Update image
+
+```bash
+kubectl set image deployment/kubernetes-web-deployment web-container=kubernetes-web-app:v2
+```
+
+### Roll back
+
+```bash
+kubectl rollout undo deployment/kubernetes-web-deployment
+```
+
+---
+
+# 33. Delete the Practical Resources
+
+When you have finished the practical, remove the Kubernetes resources:
+
+```bash
+kubectl delete -f service.yaml
+```
+
+Then:
+
+```bash
+kubectl delete -f deployment.yaml
+```
+
+Check:
+
+```bash
+kubectl get all
+```
+
+The resources should no longer be present.
+
+---
+
+# 34. Complete Folder Structure
+
+Your project should look like:
+
+```text
+kubernetes-demo/
+│
+├── Dockerfile
+├── index.html
+├── deployment.yaml
+└── service.yaml
+```
+
+---
+
+# 35. Complete Practical Flow
+
+Remember this sequence:
+
+```text
+1. Create HTML application
+          ↓
+2. Create Dockerfile
+          ↓
+3. Build Docker image
+          ↓
+4. Enable Kubernetes
+          ↓
+5. Create Deployment YAML
+          ↓
+6. kubectl apply
+          ↓
+7. Kubernetes creates Pods
+          ↓
+8. Create Service
+          ↓
+9. Access application
+          ↓
+10. Scale Pods
+          ↓
+11. Test self-healing
+          ↓
+12. Update/Rollback application
+```
+
+---
+
+# 36. Lab Record Answer
+
+### Aim
+
+To manage Kubernetes Pods and Deployments for a Docker-based web application.
+
+### Requirements
+
+- Docker Desktop
+- Kubernetes
+- kubectl
+- Docker image
+- Web browser
+
+### Procedure
+
+1. Enabled Kubernetes in Docker Desktop.
+2. Verified the Kubernetes cluster using `kubectl get nodes`.
+3. Created a simple web application.
+4. Created a Dockerfile and built a Docker image.
+5. Created a Kubernetes Deployment YAML file.
+6. Configured the Deployment with two replicas.
+7. Applied the Deployment using `kubectl apply`.
+8. Verified the Pods using `kubectl get pods`.
+9. Created a Kubernetes NodePort Service.
+10. Accessed the web application through the browser.
+11. Scaled the Deployment from two Pods to four Pods.
+12. Deleted a Pod and verified that Kubernetes automatically created a replacement.
+13. Updated the Docker image and performed a rolling update.
+14. Tested Deployment rollback.
+
+### Result
+
+**Thus, Kubernetes Pods and Deployments were successfully created and managed for a Docker-based web application, including scaling, self-healing, and rolling updates.**
+
+---
+
+# 37. Viva Questions
+
+### 1. What is Kubernetes?
+
+Kubernetes is a container orchestration platform used to deploy, manage, scale, and maintain containerized applications.
+
+### 2. What is a Pod?
+
+A Pod is the smallest deployable unit in Kubernetes and contains one or more containers.
+
+### 3. What is a Deployment?
+
+A Deployment manages the desired number of Pods and supports scaling and rolling updates.
+
+### 4. What is a Replica?
+
+A replica is another running instance of a Pod created to maintain the desired application capacity.
+
+### 5. What does this mean?
+
+```yaml
+replicas: 2
+```
+
+It tells Kubernetes to maintain **two Pods**.
+
+### 6. How do you see Pods?
+
+```bash
+kubectl get pods
+```
+
+### 7. How do you scale a Deployment?
+
+```bash
+kubectl scale deployment kubernetes-web-deployment --replicas=4
+```
+
+### 8. What happens if a Pod is deleted?
+
+The Deployment detects that the desired number of Pods is no longer available and creates a replacement.
+
+### 9. What is a Kubernetes Service?
+
+A Service provides a stable network endpoint for accessing Pods.
+
+### 10. What is a rolling update?
+
+A rolling update gradually replaces old Pods with new Pods so that the application can continue running during an update.
+
+---
+
+## ⭐ Most important commands to remember
+
+```bash
+kubectl get nodes
+```
+
+```bash
+kubectl apply -f deployment.yaml
+```
+
+```bash
+kubectl get pods
+```
+
+```bash
+kubectl get deployments
+```
+
+```bash
+kubectl apply -f service.yaml
+```
+
+```bash
+kubectl get services
+```
+
+```bash
+kubectl scale deployment kubernetes-web-deployment --replicas=4
+```
+
+```bash
+kubectl delete pod POD_NAME
+```
+
+```bash
+kubectl rollout status deployment/kubernetes-web-deployment
+```
+
+```bash
+kubectl rollout undo deployment/kubernetes-web-deployment
+```
+
+> **One-line concept:** Docker creates the container → Kubernetes Deployment manages the Pods → Service provides access → Kubernetes automatically maintains the desired number of Pods.**
