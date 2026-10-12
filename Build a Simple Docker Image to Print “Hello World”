@@ -1,0 +1,450 @@
+# Practical: Build a Simple Docker Image to Print “Hello World”
+
+We'll do this **step by step**, starting from installing Docker and ending with running the image.
+
+The final workflow is:
+
+```text
+Dockerfile
+    ↓
+docker build
+    ↓
+Docker Image
+    ↓
+docker run
+    ↓
+Hello World!
+```
+
+## Step 1 — Install Docker
+
+Download **Docker Desktop** from the official Docker website:
+
+[Docker Desktop](https://www.docker.com/products/docker-desktop/?utm_source=chatgpt.com)
+
+Install it using the default options.
+
+After installation, **start Docker Desktop**.
+
+Wait until Docker indicates that it is running.
+
+---
+
+# Step 2 — Check Docker installation
+
+Open **Command Prompt / PowerShell / Terminal**.
+
+Run:
+
+```bash
+docker --version
+```
+
+You should get something similar to:
+
+```text
+Docker version 2x.x.x
+```
+
+Then run:
+
+```bash
+docker run hello-world
+```
+
+Docker will download the standard `hello-world` image and run it.
+
+You should see:
+
+```text
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+```
+
+If you see that message, Docker is working correctly. ✅
+
+> Note: This test uses Docker's existing `hello-world` image. For your **syllabus practical**, we'll create our **own Docker image** next.
+
+---
+
+# Step 3 — Create a project folder
+
+Create a folder called:
+
+```text
+docker-hello
+```
+
+Windows:
+
+```bash
+mkdir docker-hello
+cd docker-hello
+```
+
+Your folder is currently:
+
+```text
+docker-hello/
+```
+
+---
+
+# Step 4 — Create a Dockerfile
+
+Inside `docker-hello`, create a file named exactly:
+
+```text
+Dockerfile
+```
+
+**Important:** It should be `Dockerfile`, not `Dockerfile.txt`.
+
+Put this inside:
+
+```dockerfile
+FROM alpine:latest
+
+CMD ["echo", "Hello World"]
+```
+
+Save the file.
+
+Your project now looks like:
+
+```text
+docker-hello/
+└── Dockerfile
+```
+
+---
+
+# Step 5 — Understand the Dockerfile
+
+### `FROM`
+
+```dockerfile
+FROM alpine:latest
+```
+
+This tells Docker to use the lightweight **Alpine Linux** image as the base image.
+
+### `CMD`
+
+```dockerfile
+CMD ["echo", "Hello World"]
+```
+
+This specifies the command that will execute when the container starts.
+
+So:
+
+```text
+Container starts
+      ↓
+echo "Hello World"
+      ↓
+Hello World
+```
+
+---
+
+# Step 6 — Build the Docker image
+
+Make sure your terminal is inside the `docker-hello` directory.
+
+Run:
+
+```bash
+docker build -t hello-world-image .
+```
+
+### What does this mean?
+
+```text
+docker build
+```
+
+Build a Docker image.
+
+```text
+-t hello-world-image
+```
+
+Give the image the name:
+
+```text
+hello-world-image
+```
+
+```text
+.
+```
+
+Use the current directory as the build context.
+
+You should eventually see something similar to:
+
+```text
+Successfully built ...
+Successfully tagged hello-world-image:latest
+```
+
+Depending on your Docker version, the output format may look slightly different.
+
+---
+
+# Step 7 — Check the image
+
+Run:
+
+```bash
+docker images
+```
+
+You should see something similar to:
+
+```text
+REPOSITORY          TAG       IMAGE ID       SIZE
+hello-world-image   latest    xxxxxxxx       ...
+```
+
+Your custom Docker image has been created. ✅
+
+---
+
+# Step 8 — Run the Docker container
+
+Now run:
+
+```bash
+docker run hello-world-image
+```
+
+Expected output:
+
+```text
+Hello World
+```
+
+🎉 You have successfully built and executed your own Docker image.
+
+---
+
+# Step 9 — Check the container
+
+Run:
+
+```bash
+docker ps -a
+```
+
+You should see your container listed.
+
+For example:
+
+```text
+CONTAINER ID   IMAGE              STATUS
+xxxxxxxx       hello-world-image  Exited (0)
+```
+
+Why does it say **Exited**?
+
+Because our program only executes:
+
+```bash
+echo "Hello World"
+```
+
+Once `echo` finishes, there is nothing else for the container to do, so it exits.
+
+That is completely normal for this practical.
+
+---
+
+# Step 10 — Run the image again
+
+You can run it again whenever you want:
+
+```bash
+docker run hello-world-image
+```
+
+Output:
+
+```text
+Hello World
+```
+
+Each `docker run` creates a new container from the image.
+
+---
+
+# Step 11 — See all your containers
+
+Run:
+
+```bash
+docker ps -a
+```
+
+You may see multiple containers:
+
+```text
+hello-world-image
+hello-world-image
+hello-world-image
+```
+
+because you ran the image multiple times.
+
+---
+
+# Step 12 — Remove stopped containers
+
+If you want to clean them up, you can remove a container using its ID:
+
+```bash
+docker rm CONTAINER_ID
+```
+
+For example:
+
+```bash
+docker rm abc123
+```
+
+You can also remove unused stopped containers with:
+
+```bash
+docker container prune
+```
+
+Docker will ask for confirmation.
+
+---
+
+# Step 13 — Remove the image
+
+When you're completely finished with the practical, you can remove your image:
+
+```bash
+docker rmi hello-world-image
+```
+
+Check:
+
+```bash
+docker images
+```
+
+The image should no longer appear.
+
+**Don't run this step until you've finished testing the image.**
+
+---
+
+# ⭐ Complete practical in just 3 commands
+
+Once your `Dockerfile` is created, the main commands are:
+
+### 1. Build
+
+```bash
+docker build -t hello-world-image .
+```
+
+### 2. Check
+
+```bash
+docker images
+```
+
+### 3. Run
+
+```bash
+docker run hello-world-image
+```
+
+Output:
+
+```text
+Hello World
+```
+
+---
+
+# Complete Dockerfile
+
+For your lab record, the complete program is:
+
+```dockerfile
+FROM alpine:latest
+
+CMD ["echo", "Hello World"]
+```
+
+---
+
+# Expected folder structure
+
+```text
+docker-hello/
+│
+└── Dockerfile
+```
+
+After building/running, Docker stores the image and container information separately; you don't need to see additional files inside this folder.
+
+---
+
+# Lab record answer
+
+### Aim
+
+To build a simple Docker image that prints **"Hello World"**.
+
+### Requirements
+
+- Docker Desktop
+- Terminal / Command Prompt
+- Dockerfile
+
+### Procedure
+
+1. Install Docker Desktop.
+2. Verify Docker using `docker --version`.
+3. Create a project directory named `docker-hello`.
+4. Create a file named `Dockerfile`.
+5. Specify Alpine Linux as the base image.
+6. Add the `echo "Hello World"` command.
+7. Build the image using `docker build`.
+8. Verify the image using `docker images`.
+9. Run the container using `docker run`.
+10. Verify that **Hello World** is displayed.
+
+### Dockerfile
+
+```dockerfile
+FROM alpine:latest
+
+CMD ["echo", "Hello World"]
+```
+
+### Commands
+
+```bash
+docker build -t hello-world-image .
+docker images
+docker run hello-world-image
+```
+
+### Output
+
+```text
+Hello World
+```
+
+### Result
+
+**Thus, a simple Docker image was successfully created and executed, and the container printed "Hello World".**
