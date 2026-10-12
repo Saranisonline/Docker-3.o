@@ -1,0 +1,776 @@
+# Practical 7: Apply CI/CD Principles to Web Development Using Jenkins, Git, and a Local HTTP Server
+
+## 1. Aim
+
+To implement a simple **CI/CD pipeline** for a web application using **Git/GitHub, Jenkins, and a local HTTP server**, where changes pushed to GitHub are automatically deployed to the local web server.
+
+---
+
+## 2. What you will build
+
+The flow will be:
+
+```text
+Developer
+    │
+    │ git push
+    ▼
+GitHub Repository
+    │
+    │ Jenkins detects change
+    ▼
+Jenkins Pipeline
+    │
+    ├── Checkout
+    ├── Build/Validate
+    └── Deploy
+          │
+          ▼
+Local HTTP Server
+          │
+          ▼
+http://localhost/ci-cd-demo/
+```
+
+### CI means
+**Continuous Integration** — whenever code is pushed, Jenkins checks and validates the project.
+
+### CD means
+**Continuous Delivery/Deployment** — after a successful pipeline, Jenkins deploys the website automatically.
+
+---
+
+# 3. Software Required
+
+For a Windows lab:
+
+- Git
+- GitHub account
+- Jenkins
+- Java/JDK
+- XAMPP
+- Web browser
+
+We will use **Apache from XAMPP** as the local HTTP server.
+
+---
+
+# 4. Start the Local HTTP Server
+
+If you don't have XAMPP:
+
+Install XAMPP and open **XAMPP Control Panel**.
+
+Start:
+
+```text
+Apache
+```
+
+You should see Apache running.
+
+Now open:
+
+```text
+http://localhost/
+```
+
+If the XAMPP page appears, your local HTTP server is working.
+
+---
+
+# 5. Create the Web Project
+
+Create a folder:
+
+```text
+ci-cd-web
+```
+
+Inside it create:
+
+```text
+ci-cd-web/
+│
+├── Jenkinsfile
+│
+└── web/
+    ├── index.html
+    └── style.css
+```
+
+The important idea is that the actual website is inside the `web` folder.
+
+---
+
+# 6. Create `index.html`
+
+Inside:
+
+```text
+ci-cd-web/web/index.html
+```
+
+put:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CI/CD Demo</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>CI/CD Pipeline Successful!</h1>
+    <p>This website was deployed automatically using Jenkins.</p>
+
+</body>
+</html>
+```
+
+---
+
+# 7. Create `style.css`
+
+Create:
+
+```text
+ci-cd-web/web/style.css
+```
+
+Add:
+
+```css
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 100px;
+}
+
+h1 {
+    font-size: 40px;
+}
+
+p {
+    font-size: 20px;
+}
+```
+
+---
+
+# 8. Test the Website Locally
+
+Before using Jenkins, you can test the files manually.
+
+Copy the contents of:
+
+```text
+ci-cd-web/web/
+```
+
+to:
+
+```text
+C:\xampp\htdocs\ci-cd-demo\
+```
+
+So you have:
+
+```text
+C:\xampp\htdocs\ci-cd-demo\
+│
+├── index.html
+└── style.css
+```
+
+Now open:
+
+```text
+http://localhost/ci-cd-demo/
+```
+
+You should see:
+
+```text
+CI/CD Pipeline Successful!
+
+This website was deployed automatically using Jenkins.
+```
+
+---
+
+# 9. Create a Git Repository
+
+Open Command Prompt/PowerShell inside:
+
+```text
+ci-cd-web
+```
+
+Run:
+
+```bash
+git init
+```
+
+Then:
+
+```bash
+git add .
+```
+
+Commit:
+
+```bash
+git commit -m "Initial CI/CD web application"
+```
+
+---
+
+# 10. Create GitHub Repository
+
+Go to GitHub and create a new repository.
+
+For example:
+
+```text
+ci-cd-web
+```
+
+Do not need to add README if you already created the project locally.
+
+Connect your local project:
+
+```bash
+git remote add origin https://github.com/YOUR-USERNAME/ci-cd-web.git
+```
+
+Rename the branch:
+
+```bash
+git branch -M main
+```
+
+Push:
+
+```bash
+git push -u origin main
+```
+
+Verify that GitHub contains:
+
+```text
+Jenkinsfile
+web/
+   index.html
+   style.css
+```
+
+---
+
+# 11. Create the Jenkinsfile
+
+Now create:
+
+```text
+ci-cd-web/Jenkinsfile
+```
+
+Use this Windows version:
+
+```groovy
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code from GitHub...'
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Validating web application...'
+                bat 'if not exist web\\index.html exit /b 1'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying website to local HTTP server...'
+
+                powershell '''
+                    $src = "$env:WORKSPACE\\web\\*"
+                    $dest = "C:\\xampp\\htdocs\\ci-cd-demo"
+
+                    New-Item -ItemType Directory -Force -Path $dest | Out-Null
+
+                    Copy-Item -Path $src -Destination $dest -Recurse -Force
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'CI/CD pipeline completed successfully!'
+        }
+
+        failure {
+            echo 'CI/CD pipeline failed!'
+        }
+    }
+}
+```
+
+### What this Jenkinsfile does
+
+**Checkout:**
+
+```groovy
+checkout scm
+```
+
+Downloads the project from GitHub.
+
+**Build:**
+
+```groovy
+if not exist web\\index.html exit /b 1
+```
+
+Checks whether the main webpage exists.
+
+**Deploy:**
+
+```powershell
+Copy-Item
+```
+
+Copies the website into:
+
+```text
+C:\xampp\htdocs\ci-cd-demo
+```
+
+Apache then serves those files.
+
+---
+
+# 12. Commit the Jenkinsfile
+
+Run:
+
+```bash
+git add Jenkinsfile
+```
+
+Then:
+
+```bash
+git commit -m "Add Jenkins CI/CD pipeline"
+```
+
+Push:
+
+```bash
+git push
+```
+
+---
+
+# 13. Create Jenkins Pipeline
+
+Open Jenkins.
+
+Usually:
+
+```text
+http://localhost:8080
+```
+
+Click:
+
+```text
+New Item
+```
+
+Enter:
+
+```text
+ci-cd-web-pipeline
+```
+
+Select:
+
+```text
+Pipeline
+```
+
+Click:
+
+```text
+OK
+```
+
+---
+
+# 14. Configure GitHub Repository
+
+Scroll to:
+
+```text
+Pipeline
+```
+
+For:
+
+```text
+Definition
+```
+
+select:
+
+```text
+Pipeline script from SCM
+```
+
+For:
+
+```text
+SCM
+```
+
+select:
+
+```text
+Git
+```
+
+Enter your repository URL:
+
+```text
+https://github.com/YOUR-USERNAME/ci-cd-web.git
+```
+
+For branch:
+
+```text
+*/main
+```
+
+Script Path:
+
+```text
+Jenkinsfile
+```
+
+Click:
+
+```text
+Save
+```
+
+---
+
+# 15. Run the Pipeline
+
+Click:
+
+```text
+Build Now
+```
+
+Jenkins should show a build such as:
+
+```text
+#1
+```
+
+Click the build number and select:
+
+```text
+Console Output
+```
+
+You should see stages similar to:
+
+```text
+[Pipeline] stage
+[Pipeline] { (Checkout)
+
+Checking out source code from GitHub...
+
+[Pipeline] stage
+[Pipeline] { (Build)
+
+Validating web application...
+
+[Pipeline] stage
+[Pipeline] { (Deploy)
+
+Deploying website to local HTTP server...
+
+CI/CD pipeline completed successfully!
+```
+
+The build should finish with:
+
+```text
+Finished: SUCCESS
+```
+
+---
+
+# 16. Verify Automatic Deployment
+
+Open:
+
+```text
+http://localhost/ci-cd-demo/
+```
+
+The website should appear.
+
+At this point:
+
+```text
+GitHub → Jenkins → Apache → Browser
+```
+
+is working.
+
+---
+
+# 17. Test the CI/CD Process
+
+This is the most important part of the practical.
+
+Change:
+
+```text
+web/index.html
+```
+
+For example, change:
+
+```html
+<h1>CI/CD Pipeline Successful!</h1>
+```
+
+to:
+
+```html
+<h1>Welcome to Automated CI/CD!</h1>
+```
+
+Save the file.
+
+Now run:
+
+```bash
+git add .
+```
+
+Then:
+
+```bash
+git commit -m "Update website heading"
+```
+
+Push:
+
+```bash
+git push
+```
+
+---
+
+# 18. Trigger Jenkins
+
+For a basic lab, you can manually click:
+
+```text
+Build Now
+```
+
+For a **true automatic CI/CD setup**, configure a GitHub webhook so that a GitHub push triggers Jenkins.
+
+The webhook points to:
+
+```text
+http://YOUR-JENKINS-ADDRESS/github-webhook/
+```
+
+### Important
+
+If Jenkins is running only at:
+
+```text
+http://localhost:8080
+```
+
+GitHub cannot directly reach your computer's `localhost`.
+
+For a classroom demonstration, **Build Now** is perfectly fine if the goal is to demonstrate the CI/CD pipeline stages. For actual push-triggered automation, Jenkins needs to be reachable by GitHub.
+
+---
+
+# 19. Check the Updated Website
+
+After Jenkins finishes successfully, refresh:
+
+```text
+http://localhost/ci-cd-demo/
+```
+
+You should now see:
+
+```text
+Welcome to Automated CI/CD!
+```
+
+You didn't manually copy the updated files to XAMPP.
+
+Jenkins did it.
+
+That's the CI/CD demonstration.
+
+---
+
+# 20. Final Project Structure
+
+Your GitHub repository should look like:
+
+```text
+ci-cd-web/
+│
+├── Jenkinsfile
+│
+└── web/
+    ├── index.html
+    └── style.css
+```
+
+The deployment directory is:
+
+```text
+C:\xampp\htdocs\ci-cd-demo\
+│
+├── index.html
+└── style.css
+```
+
+---
+
+# 21. Complete Workflow for Your Practical
+
+Remember this sequence for your lab exam:
+
+```text
+1. Create HTML/CSS application
+          ↓
+2. Create Git repository
+          ↓
+3. Push project to GitHub
+          ↓
+4. Create Jenkins Pipeline
+          ↓
+5. Jenkins checks out GitHub code
+          ↓
+6. Jenkins validates the application
+          ↓
+7. Jenkins copies files to XAMPP
+          ↓
+8. Apache serves the website
+          ↓
+9. Open localhost in browser
+```
+
+---
+
+# 22. Lab Record Answer
+
+### Aim
+
+To implement CI/CD principles for web development using Jenkins, Git, GitHub, and a local HTTP server.
+
+### Requirements
+
+- Git
+- GitHub
+- Jenkins
+- Java/JDK
+- XAMPP/Apache
+- Web browser
+- HTML/CSS
+
+### Procedure
+
+1. Created a simple HTML/CSS web application.
+2. Initialized a Git repository.
+3. Added and committed the source files.
+4. Created a GitHub repository and pushed the project.
+5. Created a Jenkins Pipeline using a `Jenkinsfile`.
+6. Configured Jenkins to obtain source code from GitHub.
+7. Added checkout, build/validation, and deployment stages.
+8. Configured Jenkins to copy the website to the XAMPP Apache directory.
+9. Executed the Jenkins pipeline.
+10. Verified the deployed application using `http://localhost/ci-cd-demo/`.
+11. Modified the web application and pushed the changes to GitHub.
+12. Re-ran the pipeline and verified that the updated website was deployed automatically.
+
+### Result
+
+**Thus, a CI/CD pipeline for a web application was successfully implemented using Jenkins, Git/GitHub, and a local HTTP server.**
+
+---
+
+## 23. Viva Questions
+
+**Q1. What is CI?**  
+Continuous Integration is the practice of automatically integrating and validating code changes frequently.
+
+**Q2. What is CD?**  
+Continuous Delivery/Deployment automates the process of delivering or deploying successfully validated code.
+
+**Q3. What is Jenkins?**  
+Jenkins is an automation server used to implement CI/CD pipelines.
+
+**Q4. What is Git used for?**  
+Git is used for version control and tracking changes to source code.
+
+**Q5. What is GitHub?**  
+GitHub is a cloud-based platform for hosting Git repositories and collaborating on source code.
+
+**Q6. What is Apache?**  
+Apache HTTP Server is a web server that serves web files to browsers.
+
+**Q7. What is the purpose of the Jenkinsfile?**  
+It defines the stages and steps of the Jenkins pipeline as code.
+
+**Q8. What happens after `git push`?**  
+In an automated setup, Jenkins can detect the change, run the pipeline, and deploy the updated website.
+
+**Q9. What is the local HTTP server in this practical?**  
+We use **Apache through XAMPP**.
+
+**Q10. Where is the website deployed?**
+
+```text
+C:\xampp\htdocs\ci-cd-demo
+```
+
+and accessed through:
+
+```text
+http://localhost/ci-cd-demo/
+```
+
+### One-line concept to remember
+
+> **Git stores the code → GitHub hosts it → Jenkins automates CI/CD → Apache serves the deployed website.**
