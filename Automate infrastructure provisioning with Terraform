@@ -1,0 +1,636 @@
+# Practical 12: Automate Infrastructure Provisioning with Terraform
+
+We’ll do this **locally on Windows**, so you don’t need AWS/Azure/GCP or a cloud account.
+
+The practical will use Terraform to automatically create a file as a simple example of **Infrastructure as Code (IaC)**.
+
+---
+
+## 1. Aim
+
+**To automate infrastructure provisioning using Terraform.**
+
+---
+
+## 2. What is Terraform?
+
+Terraform is an **Infrastructure as Code (IaC)** tool.
+
+Instead of manually creating infrastructure, we describe what we want in a configuration file, and Terraform creates it automatically.
+
+For this practical:
+
+```text
+Terraform configuration
+        ↓
+terraform plan
+        ↓
+terraform apply
+        ↓
+Infrastructure created
+```
+
+We'll create:
+
+```text
+output.txt
+```
+
+automatically using Terraform.
+
+---
+
+# 3. Check Terraform Installation
+
+Open **Command Prompt** or **PowerShell**:
+
+```powershell
+terraform --version
+```
+
+Expected:
+
+```text
+Terraform v1.x.x
+```
+
+If you get:
+
+```text
+'terraform' is not recognized...
+```
+
+Terraform is either not installed or not added to PATH.
+
+---
+
+# 4. Create the Project Folder
+
+Create a folder:
+
+```text
+terraform-demo
+```
+
+For example:
+
+```text
+C:\DevOps\terraform-demo
+```
+
+Open the folder in VS Code.
+
+Your initial structure:
+
+```text
+terraform-demo/
+```
+
+---
+
+# 5. Create `main.tf`
+
+Inside `terraform-demo`, create:
+
+```text
+main.tf
+```
+
+Put this code inside:
+
+```hcl
+terraform {
+  required_providers {
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.5"
+    }
+  }
+}
+
+provider "local" {}
+
+resource "local_file" "devops_file" {
+  filename = "${path.module}/output.txt"
+
+  content = "Infrastructure provisioned using Terraform.\n"
+}
+```
+
+Your folder is now:
+
+```text
+terraform-demo/
+└── main.tf
+```
+
+---
+
+# 6. Understand the Code
+
+### Terraform block
+
+```hcl
+terraform {
+  required_providers {
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.5"
+    }
+  }
+}
+```
+
+This tells Terraform that we need the **local provider**.
+
+### Provider
+
+```hcl
+provider "local" {}
+```
+
+The local provider allows Terraform to manage resources on the local computer.
+
+### Resource
+
+```hcl
+resource "local_file" "devops_file"
+```
+
+This tells Terraform to create a local file.
+
+### Filename
+
+```hcl
+filename = "${path.module}/output.txt"
+```
+
+The file will be created inside our Terraform project folder.
+
+### Content
+
+```hcl
+content = "Infrastructure provisioned using Terraform.\n"
+```
+
+This is the content that Terraform will put into the file.
+
+---
+
+# 7. Initialize Terraform
+
+Open the terminal inside:
+
+```text
+terraform-demo
+```
+
+Run:
+
+```powershell
+terraform init
+```
+
+You should see something similar to:
+
+```text
+Initializing the backend...
+
+Initializing provider plugins...
+
+- Finding hashicorp/local versions matching "~> 2.5"...
+- Installing hashicorp/local...
+
+Terraform has been successfully initialized!
+```
+
+A new folder will appear:
+
+```text
+terraform-demo/
+├── .terraform/
+└── main.tf
+```
+
+---
+
+# 8. Format the Configuration
+
+Run:
+
+```powershell
+terraform fmt
+```
+
+Expected:
+
+```text
+main.tf
+```
+
+This formats the Terraform code properly.
+
+---
+
+# 9. Validate the Configuration
+
+Run:
+
+```powershell
+terraform validate
+```
+
+Expected:
+
+```text
+Success! The configuration is valid.
+```
+
+This checks whether the Terraform configuration is syntactically and structurally correct.
+
+---
+
+# 10. Generate the Execution Plan
+
+Now run:
+
+```powershell
+terraform plan
+```
+
+Terraform will show something similar to:
+
+```text
+Plan: 1 to add, 0 to change, 0 to destroy.
+```
+
+You should see a resource similar to:
+
+```text
++ resource "local_file" "devops_file"
+```
+
+### Important
+
+`terraform plan` **does not create the infrastructure**.
+
+It only tells you what Terraform is going to do.
+
+---
+
+# 11. Apply the Terraform Configuration
+
+Now execute:
+
+```powershell
+terraform apply
+```
+
+Terraform will display the plan and ask:
+
+```text
+Do you want to perform these actions?
+  Enter a value: 
+```
+
+Type:
+
+```text
+yes
+```
+
+and press **Enter**.
+
+Expected:
+
+```text
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+```
+
+---
+
+# 12. Check the Created File
+
+Look inside your project folder:
+
+```text
+terraform-demo/
+├── .terraform/
+├── .terraform.lock.hcl
+├── main.tf
+├── output.txt
+└── terraform.tfstate
+```
+
+The important new file is:
+
+```text
+output.txt
+```
+
+Open it.
+
+It should contain:
+
+```text
+Infrastructure provisioned using Terraform.
+```
+
+🎉 **Terraform has automatically provisioned our infrastructure.**
+
+---
+
+# 13. Check Terraform State
+
+Terraform keeps track of the infrastructure it manages using a **state file**.
+
+You should now see:
+
+```text
+terraform.tfstate
+```
+
+You can inspect Terraform's current state with:
+
+```powershell
+terraform show
+```
+
+You should see information about:
+
+```text
+local_file.devops_file
+```
+
+The state allows Terraform to know what resources already exist and what changes are required.
+
+---
+
+# 14. Make a Change
+
+Let's modify `main.tf`.
+
+Change:
+
+```hcl
+content = "Infrastructure provisioned using Terraform.\n"
+```
+
+to:
+
+```hcl
+content = "Hello! This infrastructure was updated using Terraform.\n"
+```
+
+Save the file.
+
+Now run:
+
+```powershell
+terraform plan
+```
+
+Terraform should detect that the file needs to be updated.
+
+You may see:
+
+```text
+Plan: 0 to add, 1 to change, 0 to destroy.
+```
+
+Then run:
+
+```powershell
+terraform apply
+```
+
+Enter:
+
+```text
+yes
+```
+
+Check `output.txt` again.
+
+It should now contain:
+
+```text
+Hello! This infrastructure was updated using Terraform.
+```
+
+This demonstrates **automated infrastructure modification**.
+
+---
+
+# 15. Destroy the Infrastructure
+
+When you are finished, run:
+
+```powershell
+terraform destroy
+```
+
+Terraform will ask for confirmation.
+
+Enter:
+
+```text
+yes
+```
+
+Expected:
+
+```text
+Destroy complete! Resources: 1 destroyed.
+```
+
+The `output.txt` file will be removed.
+
+> This is why `terraform destroy` should be used carefully: it removes resources managed by the Terraform configuration.
+
+---
+
+# 16. Final Folder Structure
+
+After `terraform init` and `terraform apply`, you'll typically have:
+
+```text
+terraform-demo/
+│
+├── .terraform/
+│   └── ...
+│
+├── .terraform.lock.hcl
+├── main.tf
+├── output.txt
+└── terraform.tfstate
+```
+
+After `terraform destroy`, `output.txt` is removed, but Terraform's state/configuration files may remain.
+
+---
+
+# 17. Complete Command List
+
+For your practical record, the main commands are:
+
+```powershell
+terraform --version
+```
+
+```powershell
+terraform init
+```
+
+```powershell
+terraform fmt
+```
+
+```powershell
+terraform validate
+```
+
+```powershell
+terraform plan
+```
+
+```powershell
+terraform apply
+```
+
+```powershell
+terraform show
+```
+
+```powershell
+terraform destroy
+```
+
+---
+
+# 18. Practical Flow to Remember
+
+Memorize this sequence:
+
+```text
+Create main.tf
+      ↓
+terraform init
+      ↓
+terraform fmt
+      ↓
+terraform validate
+      ↓
+terraform plan
+      ↓
+terraform apply
+      ↓
+Infrastructure created
+      ↓
+terraform show
+      ↓
+terraform destroy
+```
+
+### Most important difference
+
+| Command | Purpose |
+|---|---|
+| `terraform init` | Initialize Terraform |
+| `terraform fmt` | Format configuration |
+| `terraform validate` | Check configuration |
+| `terraform plan` | Preview changes |
+| `terraform apply` | Create/update infrastructure |
+| `terraform show` | View current state |
+| `terraform destroy` | Remove managed infrastructure |
+
+---
+
+# 19. Lab Record
+
+### Aim
+
+**To automate infrastructure provisioning using Terraform.**
+
+### Requirements
+
+- Windows computer
+- Terraform
+- VS Code or any text editor
+- Command Prompt/PowerShell
+
+### Procedure
+
+1. Install Terraform and verify the installation.
+2. Create a project directory named `terraform-demo`.
+3. Create a `main.tf` configuration file.
+4. Configure the Terraform local provider.
+5. Define a `local_file` resource.
+6. Run `terraform init` to initialize Terraform.
+7. Run `terraform validate` to validate the configuration.
+8. Run `terraform plan` to preview the changes.
+9. Run `terraform apply` to provision the resource.
+10. Verify that `output.txt` was created.
+11. Use `terraform show` to inspect the Terraform state.
+12. Use `terraform destroy` to remove the provisioned resource.
+
+### Result
+
+**Infrastructure was successfully provisioned, modified, and destroyed using Terraform.**
+
+---
+
+# 20. Viva Questions
+
+**Q1. What is Terraform?**  
+Terraform is an Infrastructure as Code tool used to automate infrastructure provisioning and management.
+
+**Q2. What is IaC?**  
+IaC means **Infrastructure as Code**, where infrastructure is defined and managed using configuration files.
+
+**Q3. What is `main.tf`?**  
+It is a Terraform configuration file containing infrastructure definitions.
+
+**Q4. What does `terraform init` do?**  
+It initializes the Terraform working directory and downloads required providers.
+
+**Q5. What does `terraform plan` do?**  
+It previews the changes Terraform will make without actually applying them.
+
+**Q6. What does `terraform apply` do?**  
+It creates or modifies resources according to the Terraform configuration.
+
+**Q7. What does `terraform destroy` do?**  
+It removes resources managed by the Terraform configuration.
+
+**Q8. What is `terraform.tfstate`?**  
+It is Terraform's state file, which records information about resources managed by Terraform.
+
+**Q9. What is a provider?**  
+A provider is a plugin that allows Terraform to interact with a particular platform or service.
+
+**Q10. Why use Terraform?**  
+It makes infrastructure provisioning **automated, repeatable, consistent, and easier to manage**.
+
+---
+
+## ✅ Practical 12 completed
+
+Your complete syllabus practical sequence is now covered:
+
+```text
+1. Git & GitHub
+2. Jenkins + GitHub
+3. Maven + Jenkins
+4. Docker Hello World
+5. Git Add/Push/Pull/Merge
+6. Dockerize Application
+7. CI/CD Web Development
+8. Docker + Jenkins
+9. Web Application + Docker
+10. Kubernetes Pods & Deployments
+11. Web Application + Kubernetes
+12. Terraform Infrastructure Provisioning
+```
+
+For a **college practical exam**, the Terraform practical above is a good no-cloud version because it demonstrates the complete Terraform workflow without requiring an AWS/Azure account.
