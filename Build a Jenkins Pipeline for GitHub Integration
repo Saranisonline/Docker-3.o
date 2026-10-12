@@ -1,0 +1,755 @@
+# Practical: Build a Jenkins Pipeline for GitHub Integration
+
+We'll build a simple pipeline that does this:
+
+```text
+GitHub
+   ↓
+Jenkins
+   ↓
+Clone repository
+   ↓
+Build/Test
+   ↓
+Show SUCCESS
+```
+
+Then we'll configure a **GitHub webhook** so that a push to GitHub can automatically trigger Jenkins.
+
+A Jenkins Pipeline is normally defined in a `Jenkinsfile` stored in your source-control repository. Jenkins recommends this "Pipeline as code" approach. [Jenkins](https://www.jenkins.io/doc/pipeline/tour/hello-world/?utm_source=chatgpt.com)
+
+---
+
+## Step 1 — Make sure you have these installed
+
+You need:
+
+1. **Git**
+2. **GitHub account**
+3. **Jenkins**
+4. Java/JDK suitable for your Jenkins installation
+
+If you already completed the previous **Git and GitHub** practical, you already have Git and GitHub.
+
+For Jenkins installation, use the official Jenkins documentation:
+
+[Jenkins installation documentation](https://www.jenkins.io/doc/book/installing/?utm_source=chatgpt.com)
+
+After installing Jenkins, open:
+
+```text
+http://localhost:8080
+```
+
+You should see the Jenkins login page.
+
+---
+
+# Step 2 — Open Jenkins
+
+Open your browser and enter:
+
+```text
+http://localhost:8080
+```
+
+Log in with your Jenkins username and password.
+
+You should see:
+
+```text
+Jenkins Dashboard
+```
+
+---
+
+# Step 3 — Install required plugins
+
+From the Jenkins Dashboard:
+
+```text
+Manage Jenkins
+      ↓
+Plugins
+```
+
+Go to **Available plugins**.
+
+Search for/install the plugins required for Git/Pipeline/GitHub integration, such as:
+
+- **Git**
+- **Pipeline**
+- **GitHub**
+
+Jenkins' GitHub integration uses the Git and GitHub plugins to connect jobs with GitHub repositories and can trigger builds from GitHub push events. [Jenkins](https://www.jenkins.io/solutions/github/?utm_source=chatgpt.com)
+
+If the Pipeline plugins were installed during Jenkins' initial setup, you may already have them.
+
+---
+
+# Step 4 — Create a GitHub project
+
+Let's use the repository from your previous practical:
+
+```text
+git-demo
+```
+
+Your GitHub repository should contain:
+
+```text
+git-demo/
+└── index.html
+```
+
+Now we need to add a **Jenkinsfile**.
+
+---
+
+# Step 5 — Create the Jenkinsfile
+
+Inside your `git-demo` folder, create a file named exactly:
+
+```text
+Jenkinsfile
+```
+
+No extension.
+
+Put this inside:
+
+```groovy
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo 'Downloading code from GitHub...'
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building the project...'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Testing the project...'
+            }
+        }
+
+        stage('Finish') {
+            steps {
+                echo 'Pipeline completed successfully!'
+            }
+        }
+    }
+}
+```
+
+This is a **Declarative Pipeline**. Jenkins supports both Declarative and Scripted Pipeline syntax. [Jenkins](https://www.jenkins.io/doc/book/pipeline/syntax/?utm_source=chatgpt.com)
+
+---
+
+# Step 6 — Add Jenkinsfile to Git
+
+Open Command Prompt/PowerShell in your project folder.
+
+Check:
+
+```bash
+git status
+```
+
+You should see:
+
+```text
+Jenkinsfile
+```
+
+Add it:
+
+```bash
+git add Jenkinsfile
+```
+
+Commit it:
+
+```bash
+git commit -m "Add Jenkins pipeline"
+```
+
+Push it to GitHub:
+
+```bash
+git push origin main
+```
+
+Now refresh your GitHub repository.
+
+You should see:
+
+```text
+git-demo
+│
+├── index.html
+└── Jenkinsfile
+```
+
+---
+
+# Step 7 — Create a Jenkins Pipeline job
+
+Go back to Jenkins.
+
+Click:
+
+```text
+New Item
+```
+
+Enter:
+
+```text
+GitHub-Demo-Pipeline
+```
+
+Select:
+
+```text
+Pipeline
+```
+
+Click:
+
+```text
+OK
+```
+
+---
+
+# Step 8 — Configure the Pipeline
+
+Scroll down to the **Pipeline** section.
+
+For:
+
+```text
+Definition
+```
+
+select:
+
+```text
+Pipeline script from SCM
+```
+
+Then:
+
+```text
+SCM
+```
+
+select:
+
+```text
+Git
+```
+
+---
+
+# Step 9 — Enter your GitHub repository URL
+
+For example:
+
+```text
+https://github.com/YOUR_USERNAME/git-demo.git
+```
+
+Replace:
+
+```text
+YOUR_USERNAME
+```
+
+with your actual GitHub username.
+
+Example:
+
+```text
+https://github.com/arunkumar/git-demo.git
+```
+
+If your repository is **public**, Jenkins can generally clone it without private-repository credentials.
+
+For a **private repository**, you need to configure appropriate Jenkins credentials.
+
+Jenkins' Git plugin provides the `git`/SCM functionality used to clone repositories into the Pipeline workspace. [Jenkins](https://www.jenkins.io/doc/pipeline/steps/git/?utm_source=chatgpt.com)
+
+---
+
+# Step 10 — Select the branch
+
+For:
+
+```text
+Branch Specifier
+```
+
+enter:
+
+```text
+*/main
+```
+
+If your repository uses `master`, use:
+
+```text
+*/master
+```
+
+---
+
+# Step 11 — Specify the Jenkinsfile
+
+Find:
+
+```text
+Script Path
+```
+
+Enter:
+
+```text
+Jenkinsfile
+```
+
+So your configuration should look approximately like:
+
+```text
+Definition:
+Pipeline script from SCM
+
+SCM:
+Git
+
+Repository URL:
+https://github.com/YOUR_USERNAME/git-demo.git
+
+Branch:
+*/main
+
+Script Path:
+Jenkinsfile
+```
+
+Click:
+
+```text
+Save
+```
+
+---
+
+# Step 12 — Run the Pipeline manually
+
+You should now see your Jenkins project:
+
+```text
+GitHub-Demo-Pipeline
+```
+
+Click:
+
+```text
+Build Now
+```
+
+Jenkins will:
+
+```text
+Get Jenkinsfile
+       ↓
+Connect to GitHub
+       ↓
+Checkout code
+       ↓
+Run Pipeline
+       ↓
+Build
+       ↓
+Test
+       ↓
+SUCCESS
+```
+
+---
+
+# Step 13 — Check the Console Output
+
+Click the build number, for example:
+
+```text
+#1
+```
+
+Then click:
+
+```text
+Console Output
+```
+
+You should see messages similar to:
+
+```text
+[Pipeline] Start of Pipeline
+
+[Pipeline] stage
+[Pipeline] { (Checkout)
+Downloading code from GitHub...
+
+[Pipeline] stage
+[Pipeline] { (Build)
+Building the project...
+
+[Pipeline] stage
+[Pipeline] { (Test)
+Testing the project...
+
+Pipeline completed successfully!
+
+Finished: SUCCESS
+```
+
+🎉 Your first Jenkins Pipeline is working.
+
+---
+
+# Step 14 — Connect GitHub to Jenkins using a Webhook
+
+Now we'll make it automatic.
+
+Instead of manually clicking:
+
+```text
+Build Now
+```
+
+we want:
+
+```text
+GitHub Push
+      ↓
+GitHub Webhook
+      ↓
+Jenkins
+      ↓
+Pipeline automatically runs
+```
+
+Jenkins' GitHub plugin supports triggering jobs when changes are pushed to GitHub. [Jenkins Plugins](https://plugins.jenkins.io/github/?utm_source=chatgpt.com)
+
+---
+
+# Step 15 — Configure Jenkins webhook trigger
+
+Open:
+
+```text
+Jenkins
+→ GitHub-Demo-Pipeline
+→ Configure
+```
+
+Find:
+
+```text
+Build Triggers
+```
+
+Select:
+
+```text
+GitHub hook trigger for GITScm polling
+```
+
+Save the configuration.
+
+This trigger is the Jenkins mechanism commonly used for GitHub push webhooks. [Jenkins Plugins](https://plugins.jenkins.io/github/?utm_source=chatgpt.com)
+
+---
+
+# Step 16 — Add the webhook in GitHub
+
+Open your GitHub repository:
+
+```text
+git-demo
+```
+
+Go to:
+
+```text
+Settings
+    ↓
+Webhooks
+    ↓
+Add webhook
+```
+
+For the payload URL, use:
+
+```text
+http://YOUR-JENKINS-ADDRESS/github-webhook/
+```
+
+For a Jenkins server exposed at a public address, it could look like:
+
+```text
+https://jenkins.example.com/github-webhook/
+```
+
+The Jenkins GitHub plugin documents the webhook endpoint in the form:
+
+```text
+$JENKINS_BASE_URL/github-webhook/
+``` :chatgpt-content-reference{index="7"}
+
+
+Set:
+
+```text
+Content type:
+application/json
+```
+
+For events, select:
+
+```text
+Just the push event
+```
+
+Then click:
+
+```text
+Add webhook
+```
+
+---
+
+## ⚠️ Important if Jenkins is running on your own PC
+
+If Jenkins is running at:
+
+```text
+http://localhost:8080
+```
+
+GitHub's servers **cannot normally reach your `localhost` directly**.
+
+This will not work as a GitHub webhook URL:
+
+```text
+http://localhost:8080/github-webhook/
+```
+
+For a real GitHub → Jenkins webhook, Jenkins needs to be reachable by GitHub over the network, usually through a properly configured public/hosted Jenkins endpoint.
+
+For your college practical, you can first demonstrate the integration with **Build Now**, and then configure the webhook when your Jenkins instance has a reachable URL.
+
+---
+
+# Step 17 — Test automatic build
+
+Modify your `index.html`.
+
+For example, change:
+
+```html
+<h1>Hello Git and GitHub!</h1>
+```
+
+to:
+
+```html
+<h1>Jenkins GitHub Integration</h1>
+```
+
+Then:
+
+```bash
+git add .
+```
+
+Commit:
+
+```bash
+git commit -m "Test Jenkins integration"
+```
+
+Push:
+
+```bash
+git push origin main
+```
+
+If the webhook is correctly configured:
+
+```text
+git push
+     ↓
+GitHub
+     ↓
+Webhook
+     ↓
+Jenkins
+     ↓
+Pipeline starts
+```
+
+Go to Jenkins and check **Build History**.
+
+You should see a new build such as:
+
+```text
+#2
+#1
+```
+
+---
+
+# Step 18 — Understand the Jenkinsfile
+
+This line:
+
+```groovy
+pipeline {
+```
+
+starts the Pipeline.
+
+This:
+
+```groovy
+agent any
+```
+
+means Jenkins can run the Pipeline on any available agent.
+
+This:
+
+```groovy
+stages {
+```
+
+contains the different stages.
+
+For example:
+
+```groovy
+stage('Build') {
+    steps {
+        echo 'Building the project...'
+    }
+}
+```
+
+means:
+
+> Create a stage named **Build** and execute the commands inside it.
+
+---
+
+# Complete program
+
+For your practical record, use this:
+
+```groovy
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo 'Downloading code from GitHub...'
+                checkout scm
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building the project...'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Testing the project...'
+            }
+        }
+
+        stage('Finish') {
+            steps {
+                echo 'Pipeline completed successfully!'
+            }
+        }
+    }
+}
+```
+
+---
+
+# Commands used
+
+```bash
+git add Jenkinsfile
+git commit -m "Add Jenkins pipeline"
+git push origin main
+```
+
+---
+
+# Expected workflow for your lab
+
+```text
+       GitHub Repository
+       ┌───────────────┐
+       │ index.html    │
+       │ Jenkinsfile   │
+       └───────┬───────┘
+               │
+            git push
+               │
+               ▼
+       ┌───────────────┐
+       │ GitHub Webhook│
+       └───────┬───────┘
+               │
+               ▼
+       ┌───────────────┐
+       │    Jenkins    │
+       └───────┬───────┘
+               │
+        Jenkins Pipeline
+               │
+       ┌───────┴───────┐
+       ▼       ▼       ▼
+   Checkout  Build    Test
+       │       │       │
+       └───────┴───────┘
+               │
+               ▼
+            SUCCESS
+```
+
+### Result
+
+**Thus, a Jenkins Pipeline was successfully created and integrated with a GitHub repository. The Pipeline automatically checks out the source code and executes the defined stages, and GitHub webhook integration can trigger the Pipeline when changes are pushed.** [Jenkins](https://www.jenkins.io/solutions/github/?utm_source=chatgpt.com)
+
+**Next in your syllabus is:** **“Automate Maven Build Process with Jenkins Pipeline.”** I can guide you through that one in the same **click-by-click + commands + expected output** format.
