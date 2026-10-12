@@ -1,0 +1,1080 @@
+# Practical 11: Deploy and Manage a Web Application with Kubernetes
+
+## 1. Aim
+
+To **deploy and manage a web application using Kubernetes**, including creating a Deployment, exposing the application through a Service, scaling Pods, updating the application, and checking its status.
+
+### Overall workflow
+
+```text
+Web Application
+       │
+       ▼
+  Docker Image
+       │
+       ▼
+Kubernetes Deployment
+       │
+       ├──────────┐
+       ▼          ▼
+     Pod 1      Pod 2
+       │          │
+       └────┬─────┘
+            ▼
+       Kubernetes
+         Service
+            │
+            ▼
+         Browser
+```
+
+---
+
+# 2. What is different from the previous practical?
+
+In the previous practical, you learned to manage **Pods and Deployments**.
+
+Here the focus is on deploying a complete web application and managing it using:
+
+- **Deployment**
+- **Service**
+- **Scaling**
+- **Rolling updates**
+- **Rollback**
+- **Application monitoring**
+
+Think of it as:
+
+> **Docker packages the application, Kubernetes deploys and manages it.**
+
+---
+
+# 3. Requirements
+
+You need:
+
+- Docker Desktop
+- Kubernetes enabled in Docker Desktop
+- `kubectl`
+- Web browser
+
+Check Docker:
+
+```bash
+docker --version
+```
+
+Check kubectl:
+
+```bash
+kubectl version --client
+```
+
+Check Kubernetes:
+
+```bash
+kubectl get nodes
+```
+
+Expected:
+
+```text
+NAME             STATUS   ROLES           AGE
+docker-desktop   Ready    control-plane   ...
+```
+
+If the node shows `Ready`, Kubernetes is running.
+
+---
+
+# 4. Create the Web Application
+
+Create a folder:
+
+```text
+kubernetes-web-app
+```
+
+Inside:
+
+```text
+kubernetes-web-app/
+│
+├── Dockerfile
+├── index.html
+├── deployment.yaml
+└── service.yaml
+```
+
+---
+
+# 5. Create `index.html`
+
+Create:
+
+```text
+index.html
+```
+
+Add:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kubernetes Web Application</title>
+</head>
+
+<body>
+
+    <h1>Welcome to Kubernetes!</h1>
+
+    <p>
+        This web application is deployed and managed using Kubernetes.
+    </p>
+
+    <p>
+        Version: 1.0
+    </p>
+
+</body>
+
+</html>
+```
+
+---
+
+# 6. Create the Dockerfile
+
+Create:
+
+```text
+Dockerfile
+```
+
+Add:
+
+```dockerfile
+FROM nginx:alpine
+
+COPY index.html /usr/share/nginx/html/index.html
+
+EXPOSE 80
+```
+
+This creates an Nginx-based Docker image containing our web application.
+
+---
+
+# 7. Build the Docker Image
+
+Open a terminal in the project directory.
+
+Run:
+
+```bash
+docker build -t kubernetes-web-app:v1 .
+```
+
+Check the image:
+
+```bash
+docker images
+```
+
+You should see:
+
+```text
+REPOSITORY             TAG
+kubernetes-web-app    v1
+```
+
+---
+
+# 8. Create the Kubernetes Deployment
+
+Create:
+
+```text
+deployment.yaml
+```
+
+Add:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: web-app-deployment
+
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: web-app
+
+  template:
+    metadata:
+      labels:
+        app: web-app
+
+    spec:
+      containers:
+        - name: web-container
+          image: kubernetes-web-app:v1
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 80
+```
+
+---
+
+# 9. Understand the Deployment
+
+### Deployment name
+
+```yaml
+name: web-app-deployment
+```
+
+The Kubernetes Deployment is called:
+
+```text
+web-app-deployment
+```
+
+### Three replicas
+
+```yaml
+replicas: 3
+```
+
+Kubernetes will maintain:
+
+```text
+3 Pods
+```
+
+So:
+
+```text
+Deployment
+    │
+    ├── Pod 1
+    ├── Pod 2
+    └── Pod 3
+```
+
+### Docker image
+
+```yaml
+image: kubernetes-web-app:v1
+```
+
+Each Pod runs our Docker image.
+
+---
+
+# 10. Deploy the Application
+
+Run:
+
+```bash
+kubectl apply -f deployment.yaml
+```
+
+Expected:
+
+```text
+deployment.apps/web-app-deployment created
+```
+
+---
+
+# 11. Check the Deployment
+
+Run:
+
+```bash
+kubectl get deployments
+```
+
+Expected:
+
+```text
+NAME                 READY   UP-TO-DATE   AVAILABLE
+web-app-deployment   3/3     3            3
+```
+
+The important value is:
+
+```text
+3/3
+```
+
+This means all three desired Pods are ready.
+
+---
+
+# 12. Check the Pods
+
+Run:
+
+```bash
+kubectl get pods
+```
+
+You should see three Pods:
+
+```text
+NAME                                  READY   STATUS    RESTARTS
+web-app-deployment-xxxxx-xxxxx        1/1     Running   0
+web-app-deployment-xxxxx-yyyyy        1/1     Running   0
+web-app-deployment-xxxxx-zzzzz        1/1     Running   0
+```
+
+The actual names will be different on your computer.
+
+---
+
+# 13. Create a Kubernetes Service
+
+Pods are temporary, so we normally don't access them directly.
+
+Create a Service to provide a stable endpoint.
+
+Create:
+
+```text
+service.yaml
+```
+
+Add:
+
+```yaml
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: web-app-service
+
+spec:
+  type: NodePort
+
+  selector:
+    app: web-app
+
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+```
+
+---
+
+# 14. Understand the Service
+
+The Service connects the browser to the Pods:
+
+```text
+             Service
+                │
+       ┌────────┼────────┐
+       ▼        ▼        ▼
+     Pod 1    Pod 2    Pod 3
+       │        │        │
+       └────────┴────────┘
+                │
+           Web Application
+```
+
+The important part is:
+
+```yaml
+selector:
+  app: web-app
+```
+
+The Service sends traffic to Pods having:
+
+```text
+app=web-app
+```
+
+---
+
+# 15. Create the Service
+
+Run:
+
+```bash
+kubectl apply -f service.yaml
+```
+
+Expected:
+
+```text
+service/web-app-service created
+```
+
+Check:
+
+```bash
+kubectl get services
+```
+
+You should see:
+
+```text
+NAME              TYPE       CLUSTER-IP    PORT(S)
+web-app-service   NodePort   10.x.x.x      80:30080/TCP
+```
+
+---
+
+# 16. Open the Web Application
+
+For Docker Desktop Kubernetes, try:
+
+```text
+http://localhost:30080
+```
+
+You should see:
+
+```text
+Welcome to Kubernetes!
+
+This web application is deployed and managed using Kubernetes.
+
+Version: 1.0
+```
+
+Your application is now deployed.
+
+---
+
+# 17. Check Everything at Once
+
+Run:
+
+```bash
+kubectl get all
+```
+
+You should see resources such as:
+
+```text
+NAME                                      READY
+pod/web-app-deployment-xxxxx-xxxxx       1/1
+pod/web-app-deployment-xxxxx-yyyyy       1/1
+pod/web-app-deployment-xxxxx-zzzzz       1/1
+
+NAME                      TYPE       CLUSTER-IP
+service/web-app-service   NodePort   ...
+```
+
+And:
+
+```text
+deployment.apps/web-app-deployment
+```
+
+---
+
+# 18. Scale the Application
+
+Suppose traffic increases.
+
+Currently:
+
+```text
+3 Pods
+```
+
+Scale to 5:
+
+```bash
+kubectl scale deployment web-app-deployment --replicas=5
+```
+
+Check:
+
+```bash
+kubectl get pods
+```
+
+You should now have:
+
+```text
+5 Running Pods
+```
+
+Check:
+
+```bash
+kubectl get deployment
+```
+
+Expected:
+
+```text
+NAME                 READY
+web-app-deployment   5/5
+```
+
+---
+
+# 19. Scale Down
+
+You can reduce the number of Pods:
+
+```bash
+kubectl scale deployment web-app-deployment --replicas=2
+```
+
+Check:
+
+```bash
+kubectl get pods
+```
+
+Now Kubernetes should maintain two Pods.
+
+---
+
+# 20. Test Kubernetes Self-Healing
+
+This is an important demonstration.
+
+First:
+
+```bash
+kubectl get pods
+```
+
+Suppose you have:
+
+```text
+Pod A
+Pod B
+```
+
+Delete one:
+
+```bash
+kubectl delete pod POD_NAME
+```
+
+For example:
+
+```bash
+kubectl delete pod web-app-deployment-xxxxx-xxxxx
+```
+
+Immediately check:
+
+```bash
+kubectl get pods
+```
+
+You may temporarily see the deleted Pod terminating and a new Pod being created.
+
+After a few seconds:
+
+```text
+2/2 Pods Running
+```
+
+### Why?
+
+The Deployment has:
+
+```yaml
+replicas: 2
+```
+
+Kubernetes automatically creates a replacement to maintain the desired state.
+
+---
+
+# 21. Update the Application
+
+Now let's deploy version 2.
+
+Change `index.html`:
+
+```html
+<h1>Welcome to Kubernetes!</h1>
+```
+
+to:
+
+```html
+<h1>Kubernetes Web Application - Version 2</h1>
+```
+
+Also change:
+
+```html
+Version: 1.0
+```
+
+to:
+
+```html
+Version: 2.0
+```
+
+---
+
+# 22. Build Version 2 Docker Image
+
+Run:
+
+```bash
+docker build -t kubernetes-web-app:v2 .
+```
+
+Verify:
+
+```bash
+docker images
+```
+
+You should have:
+
+```text
+kubernetes-web-app    v1
+kubernetes-web-app    v2
+```
+
+---
+
+# 23. Update the Kubernetes Deployment
+
+Run:
+
+```bash
+kubectl set image deployment/web-app-deployment web-container=kubernetes-web-app:v2
+```
+
+Expected:
+
+```text
+deployment.apps/web-app-deployment image updated
+```
+
+---
+
+# 24. Monitor the Update
+
+Run:
+
+```bash
+kubectl rollout status deployment/web-app-deployment
+```
+
+Expected:
+
+```text
+deployment "web-app-deployment" successfully rolled out
+```
+
+Kubernetes gradually replaces the old Pods with new Pods.
+
+This is called a:
+
+> **Rolling Update**
+
+---
+
+# 25. Check the New Pods
+
+Run:
+
+```bash
+kubectl get pods
+```
+
+The Pods should be running the new version.
+
+You can also check:
+
+```bash
+kubectl describe deployment web-app-deployment
+```
+
+Look for the container image:
+
+```text
+kubernetes-web-app:v2
+```
+
+---
+
+# 26. Refresh the Website
+
+Open:
+
+```text
+http://localhost:30080
+```
+
+Refresh the page.
+
+You should now see:
+
+```text
+Kubernetes Web Application - Version 2
+
+Version: 2.0
+```
+
+---
+
+# 27. Check Deployment History
+
+Run:
+
+```bash
+kubectl rollout history deployment/web-app-deployment
+```
+
+You can see the Deployment revisions.
+
+---
+
+# 28. Roll Back the Application
+
+Suppose Version 2 has a problem.
+
+Roll back:
+
+```bash
+kubectl rollout undo deployment/web-app-deployment
+```
+
+Check:
+
+```bash
+kubectl rollout status deployment/web-app-deployment
+```
+
+Then refresh:
+
+```text
+http://localhost:30080
+```
+
+The application should return to the previous version.
+
+---
+
+# 29. View Application Logs
+
+First find a Pod:
+
+```bash
+kubectl get pods
+```
+
+Then:
+
+```bash
+kubectl logs POD_NAME
+```
+
+Example:
+
+```bash
+kubectl logs web-app-deployment-xxxxx-xxxxx
+```
+
+This is useful when troubleshooting the web application.
+
+---
+
+# 30. Describe the Application
+
+For detailed Deployment information:
+
+```bash
+kubectl describe deployment web-app-deployment
+```
+
+For Service information:
+
+```bash
+kubectl describe service web-app-service
+```
+
+For Pod information:
+
+```bash
+kubectl describe pod POD_NAME
+```
+
+---
+
+# 31. Test the Service
+
+Check the Service:
+
+```bash
+kubectl get service web-app-service
+```
+
+You should see:
+
+```text
+80:30080/TCP
+```
+
+This means:
+
+```text
+Service port:       80
+NodePort:           30080
+```
+
+So the browser accesses:
+
+```text
+http://localhost:30080
+```
+
+---
+
+# 32. Final Project Structure
+
+Your project should contain:
+
+```text
+kubernetes-web-app/
+│
+├── Dockerfile
+├── index.html
+├── deployment.yaml
+└── service.yaml
+```
+
+---
+
+# 33. Important Commands for the Practical
+
+### Check Kubernetes
+
+```bash
+kubectl get nodes
+```
+
+### Deploy application
+
+```bash
+kubectl apply -f deployment.yaml
+```
+
+### Create Service
+
+```bash
+kubectl apply -f service.yaml
+```
+
+### Check Pods
+
+```bash
+kubectl get pods
+```
+
+### Check Deployment
+
+```bash
+kubectl get deployment
+```
+
+### Check Service
+
+```bash
+kubectl get service
+```
+
+### Check everything
+
+```bash
+kubectl get all
+```
+
+### Scale
+
+```bash
+kubectl scale deployment web-app-deployment --replicas=5
+```
+
+### Update image
+
+```bash
+kubectl set image deployment/web-app-deployment web-container=kubernetes-web-app:v2
+```
+
+### Check update
+
+```bash
+kubectl rollout status deployment/web-app-deployment
+```
+
+### Roll back
+
+```bash
+kubectl rollout undo deployment/web-app-deployment
+```
+
+### View logs
+
+```bash
+kubectl logs POD_NAME
+```
+
+### Delete a Pod
+
+```bash
+kubectl delete pod POD_NAME
+```
+
+---
+
+# 34. Complete Practical Flow
+
+For your lab exam, remember:
+
+```text
+1. Create HTML application
+          ↓
+2. Create Dockerfile
+          ↓
+3. Build Docker image
+          ↓
+4. Create Kubernetes Deployment
+          ↓
+5. Create Pods
+          ↓
+6. Create Kubernetes Service
+          ↓
+7. Access application
+          ↓
+8. Scale Pods
+          ↓
+9. Test self-healing
+          ↓
+10. Build Version 2
+          ↓
+11. Rolling update
+          ↓
+12. Rollback if required
+```
+
+---
+
+# 35. Lab Record Answer
+
+### Aim
+
+To deploy and manage a web application using Kubernetes by creating a Deployment and Service and performing scaling, updating, and rollback operations.
+
+### Requirements
+
+- Docker Desktop
+- Kubernetes
+- kubectl
+- Docker image
+- Web browser
+
+### Procedure
+
+1. Enabled Kubernetes in Docker Desktop.
+2. Verified the Kubernetes cluster using `kubectl get nodes`.
+3. Created an HTML web application.
+4. Created a Dockerfile using Nginx.
+5. Built the Docker image.
+6. Created a Kubernetes Deployment with three replicas.
+7. Applied the Deployment using `kubectl apply`.
+8. Verified the Pods using `kubectl get pods`.
+9. Created a NodePort Service to expose the application.
+10. Accessed the application using `http://localhost:30080`.
+11. Scaled the Deployment to different numbers of Pods.
+12. Deleted a Pod and verified Kubernetes self-healing.
+13. Built a new version of the Docker image.
+14. Performed a rolling update using `kubectl set image`.
+15. Verified the rollout.
+16. Performed a rollback using `kubectl rollout undo`.
+
+### Result
+
+**Thus, a web application was successfully deployed and managed using Kubernetes, including Service exposure, scaling, self-healing, rolling updates, and rollback.**
+
+---
+
+# 36. Viva Questions
+
+### 1. What is Kubernetes?
+
+Kubernetes is a container orchestration platform used to deploy, manage, scale, and update containerized applications.
+
+### 2. What is a Deployment?
+
+A Deployment manages Pods and maintains the desired number of application instances.
+
+### 3. Why do we use a Service?
+
+A Service provides a stable way to access Pods.
+
+### 4. What is NodePort?
+
+NodePort exposes a Kubernetes Service through a port on the Kubernetes node.
+
+### 5. What does this mean?
+
+```yaml
+replicas: 3
+```
+
+Kubernetes should maintain three Pods.
+
+### 6. How do you scale a Deployment?
+
+```bash
+kubectl scale deployment web-app-deployment --replicas=5
+```
+
+### 7. What happens when a Pod fails?
+
+The Deployment creates a replacement Pod to maintain the desired number of replicas.
+
+### 8. What is a rolling update?
+
+A rolling update gradually replaces old application Pods with new Pods.
+
+### 9. How do you update a Docker image?
+
+```bash
+kubectl set image deployment/web-app-deployment web-container=kubernetes-web-app:v2
+```
+
+### 10. How do you roll back?
+
+```bash
+kubectl rollout undo deployment/web-app-deployment
+```
+
+---
+
+## ⭐ One-line concept to remember
+
+> **Docker packages the web application → Deployment manages the Pods → Service exposes the application → Kubernetes handles scaling, self-healing, and updates.**
