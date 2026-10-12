@@ -1,0 +1,595 @@
+# Practical: Dockerize an Application and Deploy It in a Container
+
+We'll create a simple **web application**, package it into a Docker image, and run it inside a Docker container.
+
+The complete flow is:
+
+```text
+Application
+    ↓
+Dockerfile
+    ↓
+docker build
+    ↓
+Docker Image
+    ↓
+docker run
+    ↓
+Docker Container
+    ↓
+Open application in browser
+```
+
+We'll use a simple **HTML web application with Nginx**, so you don't need Node.js, Java, or Python.
+
+---
+
+## Step 1 — Make sure Docker is running
+
+Open Docker Desktop and make sure it is running.
+
+Then open Command Prompt/PowerShell and execute:
+
+```bash
+docker --version
+```
+
+You should see something like:
+
+```text
+Docker version 2x.x.x
+```
+
+Also test:
+
+```bash
+docker run hello-world
+```
+
+If you see Docker's welcome message, Docker is working. ✅
+
+---
+
+# Step 2 — Create the application folder
+
+Create a folder:
+
+```bash
+mkdir docker-web-app
+cd docker-web-app
+```
+
+Your folder will initially be:
+
+```text
+docker-web-app/
+```
+
+---
+
+# Step 3 — Create the web application
+
+Inside `docker-web-app`, create:
+
+```text
+index.html
+```
+
+Put this code inside:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Docker Web Application</title>
+</head>
+<body>
+    <h1>Hello from Docker!</h1>
+    <p>This web application is running inside a Docker container.</p>
+</body>
+</html>
+```
+
+Save the file.
+
+Your project is now:
+
+```text
+docker-web-app/
+└── index.html
+```
+
+---
+
+# Step 4 — Create the Dockerfile
+
+In the same folder, create a file named:
+
+```text
+Dockerfile
+```
+
+**Make sure it is exactly `Dockerfile`, not `Dockerfile.txt`.**
+
+Put this inside:
+
+```dockerfile
+FROM nginx:alpine
+
+COPY index.html /usr/share/nginx/html/index.html
+
+EXPOSE 80
+```
+
+Save it.
+
+Now your project is:
+
+```text
+docker-web-app/
+│
+├── Dockerfile
+└── index.html
+```
+
+---
+
+# Step 5 — Understand the Dockerfile
+
+### `FROM`
+
+```dockerfile
+FROM nginx:alpine
+```
+
+Uses the lightweight Nginx web server image as the base.
+
+### `COPY`
+
+```dockerfile
+COPY index.html /usr/share/nginx/html/index.html
+```
+
+Copies our HTML file into the location where Nginx serves web pages.
+
+### `EXPOSE`
+
+```dockerfile
+EXPOSE 80
+```
+
+Documents that the application uses port **80** inside the container.
+
+---
+
+# Step 6 — Build the Docker image
+
+Make sure you are inside:
+
+```text
+docker-web-app
+```
+
+Run:
+
+```bash
+docker build -t docker-web-app .
+```
+
+The command means:
+
+```text
+docker build
+      ↓
+build an image
+
+-t docker-web-app
+      ↓
+give the image the name "docker-web-app"
+
+.
+      ↓
+use the current directory
+```
+
+Wait for the build to complete.
+
+You should eventually see something similar to:
+
+```text
+Successfully tagged docker-web-app:latest
+```
+
+Depending on your Docker version, the output may look slightly different.
+
+---
+
+# Step 7 — Check the Docker image
+
+Run:
+
+```bash
+docker images
+```
+
+You should see:
+
+```text
+REPOSITORY       TAG       IMAGE ID       SIZE
+docker-web-app   latest    xxxxxxxx       ...
+```
+
+Your application has now been converted into a Docker image. ✅
+
+---
+
+# Step 8 — Create and start the container
+
+Now run:
+
+```bash
+docker run -d -p 8080:80 --name my-web-app docker-web-app
+```
+
+Let's understand it:
+
+```text
+-d
+```
+
+Runs the container in the background.
+
+```text
+-p 8080:80
+```
+
+Connects:
+
+```text
+Your computer port 8080
+          ↓
+Container port 80
+```
+
+```text
+--name my-web-app
+```
+
+Gives the container the name `my-web-app`.
+
+```text
+docker-web-app
+```
+
+Is the image from which the container is created.
+
+---
+
+# Step 9 — Check whether the container is running
+
+Run:
+
+```bash
+docker ps
+```
+
+You should see something similar to:
+
+```text
+CONTAINER ID   IMAGE            PORTS
+xxxxxxxx       docker-web-app   0.0.0.0:8080->80/tcp
+```
+
+This means your container is running. 🎉
+
+---
+
+# Step 10 — Open the application
+
+Open your browser.
+
+Go to:
+
+```text
+http://localhost:8080
+```
+
+You should see:
+
+# Hello from Docker!
+
+and:
+
+> This web application is running inside a Docker container.
+
+🎉 **Your web application is now deployed in a Docker container.**
+
+---
+
+# Step 11 — Check container logs
+
+You can see what Nginx is doing with:
+
+```bash
+docker logs my-web-app
+```
+
+After visiting the website, you may see HTTP requests in the logs.
+
+---
+
+# Step 12 — Stop the container
+
+When you want to stop the application:
+
+```bash
+docker stop my-web-app
+```
+
+Check:
+
+```bash
+docker ps
+```
+
+The container will no longer appear among running containers.
+
+---
+
+# Step 13 — Start it again
+
+You don't need to build the image again.
+
+Simply run:
+
+```bash
+docker start my-web-app
+```
+
+Then open:
+
+```text
+http://localhost:8080
+```
+
+The application is running again. ✅
+
+---
+
+# Step 14 — Modify the application
+
+Open:
+
+```text
+index.html
+```
+
+Change:
+
+```html
+<h1>Hello from Docker!</h1>
+```
+
+to:
+
+```html
+<h1>My First Dockerized Application</h1>
+```
+
+Save it.
+
+Now **important**: the existing container contains the old version of the application.
+
+So rebuild the image:
+
+```bash
+docker build -t docker-web-app .
+```
+
+Then remove the old container:
+
+```bash
+docker rm -f my-web-app
+```
+
+Create a new container:
+
+```bash
+docker run -d -p 8080:80 --name my-web-app docker-web-app
+```
+
+Refresh:
+
+```text
+http://localhost:8080
+```
+
+You should see the updated page.
+
+---
+
+# Step 15 — See all containers
+
+Run:
+
+```bash
+docker ps -a
+```
+
+This shows both running and stopped containers.
+
+For example:
+
+```text
+CONTAINER ID   IMAGE            STATUS
+xxxxxxxx       docker-web-app   Up ...
+yyyyyyyy       docker-web-app   Exited ...
+```
+
+---
+
+# Step 16 — Remove the container
+
+When finished:
+
+```bash
+docker stop my-web-app
+```
+
+Then:
+
+```bash
+docker rm my-web-app
+```
+
+---
+
+# Step 17 — Remove the image
+
+If you also want to remove the image:
+
+```bash
+docker rmi docker-web-app
+```
+
+Check:
+
+```bash
+docker images
+```
+
+---
+
+# ⭐ Most important commands
+
+For your practical, remember these:
+
+### Build image
+
+```bash
+docker build -t docker-web-app .
+```
+
+### Run container
+
+```bash
+docker run -d -p 8080:80 --name my-web-app docker-web-app
+```
+
+### Check running containers
+
+```bash
+docker ps
+```
+
+### Stop
+
+```bash
+docker stop my-web-app
+```
+
+### Start again
+
+```bash
+docker start my-web-app
+```
+
+### View logs
+
+```bash
+docker logs my-web-app
+```
+
+### Remove container
+
+```bash
+docker rm my-web-app
+```
+
+---
+
+# Complete project
+
+Your final project looks like:
+
+```text
+docker-web-app/
+│
+├── Dockerfile
+│
+└── index.html
+```
+
+### `index.html`
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Docker Web Application</title>
+</head>
+<body>
+    <h1>Hello from Docker!</h1>
+    <p>This web application is running inside a Docker container.</p>
+</body>
+</html>
+```
+
+### `Dockerfile`
+
+```dockerfile
+FROM nginx:alpine
+
+COPY index.html /usr/share/nginx/html/index.html
+
+EXPOSE 80
+```
+
+---
+
+# Complete execution
+
+If you've already created the two files, the essential commands are:
+
+```bash
+docker build -t docker-web-app .
+```
+
+```bash
+docker run -d -p 8080:80 --name my-web-app docker-web-app
+```
+
+```bash
+docker ps
+```
+
+Then open:
+
+```text
+http://localhost:8080
+```
+
+---
+
+## Lab record
+
+### Aim
+
+To Dockerize a web application and deploy it inside a Docker container.
+
+### Procedure
+
+1. Install and start Docker Desktop.
+2. Create a simple HTML web application.
+3. Create a `Dockerfile`.
+4. Select Nginx as the base image.
+5. Copy the application into the Nginx web directory.
+6. Build the Docker image.
+7. Create and start a container from the image.
+8. Map host port `8080` to container port `80`.
+9. Access the application through a web browser.
+10. Stop and restart the container as required.
+
+### Result
+
+**Thus, the web application was successfully Dockerized, converted into a Docker image, and deployed inside a Docker container. The application was accessed successfully through `localhost:8080`.**
