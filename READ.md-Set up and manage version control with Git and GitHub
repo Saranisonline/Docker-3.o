@@ -1,0 +1,635 @@
+Absolutely. Let's do this as a **practical lab**, step by step, from installation to pushing your first project to GitHub.
+
+# Practical: Set Up and Manage Version Control with Git and GitHub
+
+### Aim
+To set up Git and GitHub and perform basic version-control operations such as **initialize, add, commit, branch, merge, and push/pull**.
+
+---
+
+## Step 1 — Install Git
+
+Download Git from the official website:
+
+[Git official website](https://git-scm.com/downloads?utm_source=chatgpt.com)
+
+Install it using the default options.
+
+After installation, open **Command Prompt** or **PowerShell** and check:
+
+```bash
+git --version
+```
+
+You should get something like:
+
+```text
+git version 2.x.x
+```
+
+If you see the version, Git is installed correctly. ✅
+
+---
+
+# Step 2 — Create a GitHub account
+
+Go to:
+
+[GitHub](https://github.com/?utm_source=chatgpt.com)
+
+Create an account or log in.
+
+You will need your:
+
+- GitHub username
+- GitHub email
+- GitHub password
+
+**Important:** Your GitHub password is not normally used directly by Git for command-line authentication. GitHub commonly uses browser authentication, a personal access token, or SSH.
+
+---
+
+# Step 3 — Configure Git
+
+Open Command Prompt/PowerShell.
+
+Set your name:
+
+```bash
+git config --global user.name "Your Name"
+```
+
+Example:
+
+```bash
+git config --global user.name "Arun Kumar"
+```
+
+Set your email:
+
+```bash
+git config --global user.email "your-email@example.com"
+```
+
+Example:
+
+```bash
+git config --global user.email "arun@gmail.com"
+```
+
+Check the configuration:
+
+```bash
+git config --list
+```
+
+You should see:
+
+```text
+user.name=Arun Kumar
+user.email=arun@gmail.com
+```
+
+---
+
+# Step 4 — Create a project
+
+Let's create a simple project called **git-demo**.
+
+On Windows:
+
+```bash
+mkdir git-demo
+cd git-demo
+```
+
+Check your current folder:
+
+```bash
+cd
+```
+
+---
+
+# Step 5 — Create a file
+
+Create a file called:
+
+```text
+index.html
+```
+
+Put this inside:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Git Demo</title>
+</head>
+<body>
+    <h1>Hello Git and GitHub!</h1>
+</body>
+</html>
+```
+
+Save the file.
+
+Your project now looks like:
+
+```text
+git-demo
+└── index.html
+```
+
+---
+
+# Step 6 — Initialize Git
+
+Inside the `git-demo` folder, execute:
+
+```bash
+git init
+```
+
+You should see something similar to:
+
+```text
+Initialized empty Git repository in .../git-demo/.git/
+```
+
+🎉 Your project is now a **Git repository**.
+
+---
+
+# Step 7 — Check the repository status
+
+Run:
+
+```bash
+git status
+```
+
+You should see something similar to:
+
+```text
+Untracked files:
+    index.html
+```
+
+**Untracked** means Git sees the file but isn't tracking it yet.
+
+---
+
+# Step 8 — Add the file to the staging area
+
+Run:
+
+```bash
+git add index.html
+```
+
+Or add all files:
+
+```bash
+git add .
+```
+
+Now check:
+
+```bash
+git status
+```
+
+You should see:
+
+```text
+Changes to be committed:
+    new file: index.html
+```
+
+---
+
+# Step 9 — Commit the file
+
+A **commit** saves a version of your project.
+
+Run:
+
+```bash
+git commit -m "Initial commit"
+```
+
+You should see something similar to:
+
+```text
+[master/main abc1234] Initial commit
+ 1 file changed
+```
+
+Your first version is now saved in Git. ✅
+
+---
+
+# Step 10 — Create a GitHub repository
+
+Go to:
+
+[GitHub](https://github.com/?utm_source=chatgpt.com)
+
+Click:
+
+**+ → New repository**
+
+Enter:
+
+```text
+Repository name: git-demo
+```
+
+You can choose **Public** for a normal college practical.
+
+### Important
+
+When creating the repository, for this exercise, **do not initialize it with**:
+
+- README
+- `.gitignore`
+- License
+
+We'll connect our existing local repository.
+
+Click:
+
+**Create repository**
+
+---
+
+# Step 11 — Connect your local Git repository to GitHub
+
+GitHub will show commands for your new repository.
+
+You can use:
+
+```bash
+git remote add origin https://github.com/YOUR_USERNAME/git-demo.git
+```
+
+Replace `YOUR_USERNAME` with your GitHub username.
+
+For example:
+
+```bash
+git remote add origin https://github.com/arunkumar/git-demo.git
+```
+
+Check the remote:
+
+```bash
+git remote -v
+```
+
+You should see your GitHub repository URL.
+
+---
+
+# Step 12 — Rename the branch to `main`
+
+Run:
+
+```bash
+git branch -M main
+```
+
+Now your current branch is called `main`.
+
+Check:
+
+```bash
+git branch
+```
+
+You should see:
+
+```text
+* main
+```
+
+---
+
+# Step 13 — Push your project to GitHub
+
+Run:
+
+```bash
+git push -u origin main
+```
+
+Git will authenticate you with GitHub if necessary.
+
+After a successful push, you should see something like:
+
+```text
+Branch 'main' set up to track remote branch 'main' from 'origin'.
+```
+
+🎉 Your project is now on GitHub.
+
+Open your repository in your browser and you should see:
+
+```text
+git-demo
+│
+└── index.html
+```
+
+---
+
+# Step 14 — Make another change
+
+Open `index.html`.
+
+Change:
+
+```html
+<h1>Hello Git and GitHub!</h1>
+```
+
+to:
+
+```html
+<h1>Welcome to Git and GitHub!</h1>
+```
+
+Save it.
+
+Check the status:
+
+```bash
+git status
+```
+
+Git will tell you that `index.html` has been modified.
+
+---
+
+# Step 15 — See what changed
+
+Run:
+
+```bash
+git diff
+```
+
+This shows the changes you made.
+
+---
+
+# Step 16 — Add and commit the change
+
+Run:
+
+```bash
+git add index.html
+```
+
+Then:
+
+```bash
+git commit -m "Update welcome message"
+```
+
+Now push the new version:
+
+```bash
+git push
+```
+
+Refresh your GitHub repository.
+
+The updated file should be there. ✅
+
+---
+
+# Step 17 — View commit history
+
+Run:
+
+```bash
+git log --oneline
+```
+
+You might see:
+
+```text
+7a21abc Update welcome message
+2b45def Initial commit
+```
+
+This shows the different versions of your project.
+
+---
+
+# Step 18 — Create a branch
+
+Branches allow you to work on a new feature without immediately changing the main version.
+
+Create a branch:
+
+```bash
+git branch feature
+```
+
+Switch to it:
+
+```bash
+git switch feature
+```
+
+Or use the shorter command:
+
+```bash
+git switch -c feature
+```
+
+Check:
+
+```bash
+git branch
+```
+
+You should see:
+
+```text
+* feature
+  main
+```
+
+The `*` indicates your current branch.
+
+---
+
+# Step 19 — Make a change in the branch
+
+Modify `index.html`.
+
+For example, add:
+
+```html
+<p>This is my feature branch.</p>
+```
+
+Then:
+
+```bash
+git add .
+```
+
+Commit it:
+
+```bash
+git commit -m "Add feature paragraph"
+```
+
+---
+
+# Step 20 — Merge the branch
+
+First return to `main`:
+
+```bash
+git switch main
+```
+
+Then merge your feature:
+
+```bash
+git merge feature
+```
+
+Your feature is now included in `main`.
+
+---
+
+# Step 21 — Push the merged version
+
+Run:
+
+```bash
+git push origin main
+```
+
+Your GitHub repository now contains the merged changes.
+
+---
+
+# Step 22 — Clone a GitHub repository
+
+This is useful when you want to download an existing project.
+
+Go to your GitHub repository and copy its HTTPS URL.
+
+Then run:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/git-demo.git
+```
+
+Git downloads the repository to your computer.
+
+Move into it:
+
+```bash
+cd git-demo
+```
+
+Check:
+
+```bash
+git status
+```
+
+---
+
+# Step 23 — Pull changes from GitHub
+
+If somebody has changed the GitHub repository, you can download the latest version using:
+
+```bash
+git pull origin main
+```
+
+So:
+
+**Push = computer → GitHub**
+
+```text
+git push
+```
+
+**Pull = GitHub → computer**
+
+```text
+git pull
+```
+
+---
+
+# ⭐ Commands you should remember for your practical
+
+```bash
+git --version
+git config --global user.name "Your Name"
+git config --global user.email "your@email.com"
+
+git init
+git status
+git add .
+git commit -m "Initial commit"
+
+git remote add origin <repository-url>
+git branch -M main
+git push -u origin main
+
+git pull
+git clone <repository-url>
+
+git branch
+git switch -c feature
+git switch main
+git merge feature
+
+git log --oneline
+git diff
+```
+
+## The complete workflow
+
+Remember this sequence:
+
+```text
+             LOCAL COMPUTER
+                   │
+              git init
+                   ↓
+              git add .
+                   ↓
+          git commit -m "..."
+                   │
+                   ↓
+                git push
+                   │
+                   ▼
+              ┌─────────┐
+              │ GitHub  │
+              └─────────┘
+                   │
+                git pull
+                   ↓
+             LOCAL COMPUTER
+```
+
+### For your lab record
+
+**Result:**  
+Git was successfully installed and configured. A local repository was created, files were staged and committed, a GitHub remote repository was connected, and the project was pushed to GitHub. Branch creation, merging, pushing, pulling, and cloning operations were also performed successfully.
