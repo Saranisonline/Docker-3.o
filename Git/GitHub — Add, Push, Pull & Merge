@@ -1,0 +1,555 @@
+# Practical: Git/GitHub — Add, Push, Pull & Merge
+
+This practical continues from your earlier **Git and GitHub** work. We will perform all four operations:
+
+```text
+ADD → PUSH → PULL → MERGE
+```
+
+We'll use a simple project called `git-merge-demo`.
+
+---
+
+## 1. Create a project
+
+Open **Command Prompt / PowerShell / Terminal**.
+
+```bash
+mkdir git-merge-demo
+cd git-merge-demo
+```
+
+Create a file called:
+
+```text
+index.html
+```
+
+Put this inside:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Git Merge Demo</title>
+</head>
+<body>
+    <h1>Hello GitHub</h1>
+</body>
+</html>
+```
+
+---
+
+# 2. Initialize Git
+
+Run:
+
+```bash
+git init
+```
+
+Expected:
+
+```text
+Initialized empty Git repository...
+```
+
+Check the status:
+
+```bash
+git status
+```
+
+You should see `index.html` as an untracked file.
+
+---
+
+# 3. Git ADD
+
+The `git add` command puts changes into the **staging area**.
+
+Run:
+
+```bash
+git add index.html
+```
+
+Or, to add everything:
+
+```bash
+git add .
+```
+
+Now check:
+
+```bash
+git status
+```
+
+You should see:
+
+```text
+Changes to be committed:
+    new file: index.html
+```
+
+### Remember
+
+```text
+Working Directory
+       ↓
+    git add
+       ↓
+Staging Area
+```
+
+---
+
+# 4. COMMIT the changes
+
+Although your practical title focuses on Add, Push, Pull and Merge, you need a commit before pushing.
+
+Run:
+
+```bash
+git commit -m "Initial commit"
+```
+
+Expected:
+
+```text
+[main xxxxxxx] Initial commit
+ 1 file changed
+```
+
+---
+
+# 5. Create a GitHub repository
+
+Go to:
+
+[GitHub](https://github.com/?utm_source=chatgpt.com)
+
+Create a new repository named:
+
+```text
+git-merge-demo
+```
+
+For this exercise, you can make it **Public**.
+
+If you're connecting your existing local repository, don't create another README initially.
+
+---
+
+# 6. Connect local Git to GitHub
+
+Copy your repository URL from GitHub.
+
+It will look like:
+
+```text
+https://github.com/YOUR_USERNAME/git-merge-demo.git
+```
+
+Run:
+
+```bash
+git remote add origin https://github.com/YOUR_USERNAME/git-merge-demo.git
+```
+
+Check:
+
+```bash
+git remote -v
+```
+
+You should see your GitHub repository.
+
+---
+
+# 7. Push to GitHub
+
+Rename your branch to `main`:
+
+```bash
+git branch -M main
+```
+
+Now push:
+
+```bash
+git push -u origin main
+```
+
+Your project should now appear on GitHub.
+
+### Remember
+
+```text
+Local computer
+      ↓
+   git push
+      ↓
+   GitHub
+```
+
+---
+
+# 8. Create a feature branch
+
+Now we'll create a separate branch so we can demonstrate **merge**.
+
+Run:
+
+```bash
+git switch -c feature
+```
+
+Check your branches:
+
+```bash
+git branch
+```
+
+You should see:
+
+```text
+* feature
+  main
+```
+
+The `*` shows your current branch.
+
+---
+
+# 9. Make a change
+
+Open `index.html`.
+
+Change:
+
+```html
+<h1>Hello GitHub</h1>
+```
+
+to:
+
+```html
+<h1>Hello GitHub - Feature Branch</h1>
+```
+
+Save it.
+
+---
+
+# 10. ADD the change
+
+Run:
+
+```bash
+git add index.html
+```
+
+Check:
+
+```bash
+git status
+```
+
+---
+
+# 11. COMMIT the change
+
+Run:
+
+```bash
+git commit -m "Update heading in feature branch"
+```
+
+Now the change is saved in the `feature` branch.
+
+---
+
+# 12. Push the feature branch
+
+Run:
+
+```bash
+git push -u origin feature
+```
+
+Now GitHub will contain two branches:
+
+```text
+main
+feature
+```
+
+You can see them from your GitHub repository's **Branches** section.
+
+---
+
+# 13. Pull from GitHub
+
+Now let's understand **PULL**.
+
+First switch back to `main`:
+
+```bash
+git switch main
+```
+
+Run:
+
+```bash
+git pull origin main
+```
+
+This downloads the latest changes from the GitHub `main` branch and integrates them into your local `main`.
+
+### Remember
+
+```text
+GitHub
+   ↓
+git pull
+   ↓
+Local repository
+```
+
+---
+
+# 14. Merge the feature branch
+
+Now we're going to merge the changes from `feature` into `main`.
+
+Make sure you are on `main`:
+
+```bash
+git switch main
+```
+
+Check:
+
+```bash
+git branch
+```
+
+You should see:
+
+```text
+  feature
+* main
+```
+
+Now merge:
+
+```bash
+git merge feature
+```
+
+You should get something similar to:
+
+```text
+Updating xxxxxxx..xxxxxxx
+Fast-forward
+ index.html | 2 +-
+```
+
+The feature changes are now part of `main`.
+
+---
+
+# 15. Push the merged code to GitHub
+
+Run:
+
+```bash
+git push origin main
+```
+
+Now GitHub's `main` branch contains the changes from `feature`.
+
+---
+
+# 16. Verify the merge
+
+Run:
+
+```bash
+git log --oneline --all
+```
+
+You should see your commits.
+
+You can also open your GitHub repository and select the **main** branch.
+
+The updated `index.html` should be there.
+
+---
+
+# Complete workflow
+
+The entire practical can be remembered as:
+
+```text
+             LOCAL PROJECT
+                  │
+                  │ git add
+                  ↓
+             STAGING AREA
+                  │
+                  │ git commit
+                  ↓
+            LOCAL REPOSITORY
+                  │
+                  │ git push
+                  ↓
+               GITHUB
+                  │
+                  │ git pull
+                  ↓
+            LOCAL REPOSITORY
+
+
+Feature branch
+      │
+      │ git add
+      ↓
+    commit
+      │
+      ↓
+   feature
+      │
+      │ git merge feature
+      ↓
+     main
+      │
+      │ git push
+      ↓
+    GitHub
+```
+
+---
+
+# Commands for the practical
+
+### ADD
+
+```bash
+git add .
+```
+
+### COMMIT
+
+```bash
+git commit -m "message"
+```
+
+### PUSH
+
+```bash
+git push origin main
+```
+
+### PULL
+
+```bash
+git pull origin main
+```
+
+### CREATE BRANCH
+
+```bash
+git switch -c feature
+```
+
+### SWITCH BRANCH
+
+```bash
+git switch main
+```
+
+### MERGE
+
+```bash
+git merge feature
+```
+
+---
+
+# If you get a merge conflict
+
+A merge conflict occurs when Git cannot automatically decide which change to keep.
+
+For example, suppose `main` has:
+
+```html
+<h1>Hello from Main</h1>
+```
+
+and `feature` has:
+
+```html
+<h1>Hello from Feature</h1>
+```
+
+Git may mark the file like this:
+
+```text
+<<<<<<< HEAD
+<h1>Hello from Main</h1>
+=======
+<h1>Hello from Feature</h1>
+>>>>>>> feature
+```
+
+You manually edit it to the version you want, for example:
+
+```html
+<h1>Hello from Main and Feature</h1>
+```
+
+Then:
+
+```bash
+git add .
+git commit -m "Resolve merge conflict"
+```
+
+Finally:
+
+```bash
+git push origin main
+```
+
+---
+
+# Lab record answer
+
+### Aim
+
+To perform **Add, Push, Pull and Merge** operations using Git and GitHub.
+
+### Procedure
+
+1. Create a local Git project.
+2. Initialize the repository using `git init`.
+3. Add files using `git add`.
+4. Commit the files using `git commit`.
+5. Create a GitHub repository.
+6. Connect the local repository using `git remote add`.
+7. Push the project using `git push`.
+8. Create a feature branch.
+9. Make and commit changes to the feature branch.
+10. Pull the latest changes using `git pull`.
+11. Switch to the main branch.
+12. Merge the feature branch using `git merge`.
+13. Push the merged changes to GitHub.
+14. Verify the final project on GitHub.
+
+### Result
+
+**Thus, Git/GitHub Add, Push, Pull, and Merge operations were successfully performed, and the changes were synchronized between the local repository and GitHub.**
