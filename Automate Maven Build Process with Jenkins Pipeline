@@ -1,0 +1,872 @@
+# Practical: Automate Maven Build Process with Jenkins Pipeline
+
+We'll build on the **GitHub + Jenkins** practical you just completed.
+
+The workflow will be:
+
+```text
+GitHub
+   ↓
+Jenkins
+   ↓
+Checkout Java/Maven project
+   ↓
+Maven compile
+   ↓
+Maven test
+   ↓
+Maven package
+   ↓
+SUCCESS
+```
+
+Jenkins recommends defining the Pipeline in a `Jenkinsfile` stored with the source code. [Jenkins Pipeline documentation](https://www.jenkins.io/doc/book/pipeline/?utm_source=chatgpt.com)
+
+---
+
+## Step 1 — Install Java
+
+Maven requires Java.
+
+Check whether Java is already installed:
+
+```bash
+java -version
+```
+
+You should see something like:
+
+```text
+java version "17..."
+```
+
+If Java isn't installed, install a supported JDK and then check again.
+
+Also check:
+
+```bash
+javac -version
+```
+
+---
+
+# Step 2 — Install Maven
+
+Download Maven from the official Apache Maven website:
+
+[Apache Maven](https://maven.apache.org/download.cgi?utm_source=chatgpt.com)
+
+After installation, check:
+
+```bash
+mvn -version
+```
+
+You should see something similar to:
+
+```text
+Apache Maven 3.x.x
+Java version: 17...
+```
+
+If both commands work:
+
+```bash
+java -version
+mvn -version
+```
+
+your computer is ready.
+
+---
+
+# Step 3 — Create a Maven project
+
+Let's create a very simple Java application.
+
+Create a folder:
+
+```bash
+mkdir maven-demo
+cd maven-demo
+```
+
+Create this folder structure:
+
+```text
+maven-demo
+│
+├── pom.xml
+└── src
+    └── main
+        └── java
+            └── com
+                └── example
+                    └── App.java
+```
+
+---
+
+# Step 4 — Create `pom.xml`
+
+Inside `maven-demo`, create:
+
+```text
+pom.xml
+```
+
+Put this code inside:
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>maven-demo</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+
+</project>
+```
+
+### What is `pom.xml`?
+
+`pom.xml` is the **Project Object Model** file. It contains information about the Maven project, dependencies, plugins, build configuration, and other project settings.
+
+---
+
+# Step 5 — Create the Java program
+
+Create:
+
+```text
+src/main/java/com/example/App.java
+```
+
+Put this inside:
+
+```java
+package com.example;
+
+public class App {
+
+    public static void main(String[] args) {
+        System.out.println("Hello from Maven and Jenkins!");
+    }
+}
+```
+
+---
+
+# Step 6 — Test Maven locally
+
+Before involving Jenkins, make sure the Maven project itself works.
+
+From inside `maven-demo`, run:
+
+```bash
+mvn clean compile
+```
+
+Maven should download any required components and compile your Java program.
+
+You should eventually see:
+
+```text
+BUILD SUCCESS
+```
+
+---
+
+# Step 7 — Run the program
+
+Run:
+
+```bash
+mvn package
+```
+
+You should again see:
+
+```text
+BUILD SUCCESS
+```
+
+Maven will create a `target` folder:
+
+```text
+maven-demo
+│
+├── pom.xml
+├── src
+│   └── main
+│       └── java
+│           └── com
+│               └── example
+│                   └── App.java
+│
+└── target
+```
+
+---
+
+# Step 8 — Add the project to Git
+
+Initialize Git:
+
+```bash
+git init
+```
+
+Check:
+
+```bash
+git status
+```
+
+Add the files:
+
+```bash
+git add .
+```
+
+Commit:
+
+```bash
+git commit -m "Create Maven project"
+```
+
+---
+
+# Step 9 — Create a `.gitignore`
+
+Create:
+
+```text
+.gitignore
+```
+
+Put:
+
+```text
+target/
+```
+
+inside it.
+
+This prevents Maven's generated `target` directory from being uploaded to GitHub.
+
+Now commit the `.gitignore`:
+
+```bash
+git add .
+git commit -m "Add Maven gitignore"
+```
+
+---
+
+# Step 10 — Push the Maven project to GitHub
+
+Create a new GitHub repository, for example:
+
+```text
+maven-demo
+```
+
+Then connect your local repository:
+
+```bash
+git remote add origin https://github.com/YOUR_USERNAME/maven-demo.git
+```
+
+Rename the branch:
+
+```bash
+git branch -M main
+```
+
+Push:
+
+```bash
+git push -u origin main
+```
+
+Your GitHub repository should now contain:
+
+```text
+maven-demo
+│
+├── pom.xml
+├── .gitignore
+└── src
+    └── main
+        └── java
+            └── com
+                └── example
+                    └── App.java
+```
+
+---
+
+# Step 11 — Configure Maven in Jenkins
+
+Open Jenkins:
+
+```text
+http://localhost:8080
+```
+
+Go to:
+
+```text
+Manage Jenkins
+        ↓
+Tools
+```
+
+Find the **Maven installations** section.
+
+Add Maven.
+
+Give it a name such as:
+
+```text
+Maven3
+```
+
+Depending on your Jenkins version, you can either let Jenkins install Maven automatically or specify an existing Maven installation.
+
+Save the configuration.
+
+Jenkins' tool configuration allows build tools such as Maven to be configured for Pipeline jobs. [Jenkins tools documentation](https://www.jenkins.io/doc/book/managing/tools/?utm_source=chatgpt.com)
+
+---
+
+# Step 12 — Create a Jenkins Pipeline
+
+Go to:
+
+```text
+Jenkins Dashboard
+       ↓
+New Item
+```
+
+Enter:
+
+```text
+Maven-Build-Pipeline
+```
+
+Select:
+
+```text
+Pipeline
+```
+
+Click:
+
+```text
+OK
+```
+
+---
+
+# Step 13 — Configure GitHub
+
+Scroll down to:
+
+```text
+Pipeline
+```
+
+Choose:
+
+```text
+Pipeline script from SCM
+```
+
+For:
+
+```text
+SCM
+```
+
+select:
+
+```text
+Git
+```
+
+Enter your repository:
+
+```text
+https://github.com/YOUR_USERNAME/maven-demo.git
+```
+
+Branch:
+
+```text
+*/main
+```
+
+Script Path:
+
+```text
+Jenkinsfile
+```
+
+---
+
+# Step 14 — Create the Jenkinsfile
+
+Now create a file called:
+
+```text
+Jenkinsfile
+```
+
+in your Maven project.
+
+Your project should become:
+
+```text
+maven-demo
+│
+├── pom.xml
+├── Jenkinsfile
+├── .gitignore
+└── src
+    └── main
+        └── java
+            └── com
+                └── example
+                    └── App.java
+```
+
+Put this inside `Jenkinsfile`:
+
+```groovy
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven3'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                checkout scm
+            }
+        }
+
+        stage('Compile') {
+            steps {
+                echo 'Compiling Maven project...'
+                sh 'mvn clean compile'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running tests...'
+                sh 'mvn test'
+            }
+        }
+
+        stage('Package') {
+            steps {
+                echo 'Creating package...'
+                sh 'mvn package'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Maven build completed successfully!'
+        }
+
+        failure {
+            echo 'Maven build failed!'
+        }
+    }
+}
+```
+
+### Important for Windows
+
+If your Jenkins agent is running on **Windows**, replace:
+
+```groovy
+sh 'mvn clean compile'
+```
+
+with:
+
+```groovy
+bat 'mvn clean compile'
+```
+
+Likewise:
+
+```groovy
+sh 'mvn test'
+```
+
+becomes:
+
+```groovy
+bat 'mvn test'
+```
+
+and:
+
+```groovy
+sh 'mvn package'
+```
+
+becomes:
+
+```groovy
+bat 'mvn package'
+```
+
+So, for Windows, use:
+
+```groovy
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven3'
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                checkout scm
+            }
+        }
+
+        stage('Compile') {
+            steps {
+                bat 'mvn clean compile'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                bat 'mvn test'
+            }
+        }
+
+        stage('Package') {
+            steps {
+                bat 'mvn package'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Maven build completed successfully!'
+        }
+
+        failure {
+            echo 'Maven build failed!'
+        }
+    }
+}
+```
+
+---
+
+# Step 15 — Push Jenkinsfile to GitHub
+
+From your project folder:
+
+```bash
+git add Jenkinsfile
+```
+
+Commit:
+
+```bash
+git commit -m "Add Maven Jenkins pipeline"
+```
+
+Push:
+
+```bash
+git push origin main
+```
+
+Check GitHub.
+
+You should now have:
+
+```text
+maven-demo
+│
+├── pom.xml
+├── Jenkinsfile
+├── .gitignore
+└── src/
+```
+
+---
+
+# Step 16 — Run Jenkins
+
+Go back to your Jenkins job:
+
+```text
+Maven-Build-Pipeline
+```
+
+Click:
+
+```text
+Build Now
+```
+
+Jenkins will download the project and execute:
+
+```text
+Checkout
+    ↓
+Compile
+    ↓
+Test
+    ↓
+Package
+```
+
+---
+
+# Step 17 — Check Console Output
+
+Click:
+
+```text
+Build #1
+     ↓
+Console Output
+```
+
+You should see Maven executing commands such as:
+
+```text
+mvn clean compile
+```
+
+then:
+
+```text
+mvn test
+```
+
+then:
+
+```text
+mvn package
+```
+
+At the end you should see:
+
+```text
+BUILD SUCCESS
+```
+
+and:
+
+```text
+Maven build completed successfully!
+```
+
+Finally:
+
+```text
+Finished: SUCCESS
+```
+
+🎉 Your Maven build is now automated through Jenkins.
+
+---
+
+# Step 18 — Understand the Pipeline
+
+Your Jenkinsfile contains these stages:
+
+### 1. Checkout
+
+```groovy
+stage('Checkout')
+```
+
+Gets the Maven project from GitHub.
+
+### 2. Compile
+
+```groovy
+stage('Compile')
+```
+
+Runs:
+
+```bash
+mvn clean compile
+```
+
+This cleans previous build output and compiles the Java source.
+
+### 3. Test
+
+```groovy
+stage('Test')
+```
+
+Runs:
+
+```bash
+mvn test
+```
+
+This executes the project's tests.
+
+### 4. Package
+
+```groovy
+stage('Package')
+```
+
+Runs:
+
+```bash
+mvn package
+```
+
+This creates the packaged application in the `target` directory.
+
+---
+
+# Step 19 — Test the automation
+
+Make a change to your Java program:
+
+```java
+System.out.println("Jenkins automatically built my Maven project!");
+```
+
+Then:
+
+```bash
+git add .
+git commit -m "Update Java application"
+git push origin main
+```
+
+If you configured the GitHub webhook from the previous practical, the flow becomes:
+
+```text
+Change Java code
+       ↓
+git push
+       ↓
+GitHub
+       ↓
+Webhook
+       ↓
+Jenkins
+       ↓
+Maven Build
+       ↓
+Compile
+       ↓
+Test
+       ↓
+Package
+       ↓
+SUCCESS
+```
+
+---
+
+# Important commands for your lab
+
+### Test Maven
+
+```bash
+mvn -version
+```
+
+### Compile
+
+```bash
+mvn clean compile
+```
+
+### Test
+
+```bash
+mvn test
+```
+
+### Package
+
+```bash
+mvn package
+```
+
+### Clean
+
+```bash
+mvn clean
+```
+
+### Git
+
+```bash
+git add .
+git commit -m "message"
+git push
+```
+
+---
+
+# Short lab-record answer
+
+**Aim:**  
+To automate the Maven build process using a Jenkins Pipeline integrated with GitHub.
+
+**Procedure:**
+
+1. Install Java and Maven.
+2. Create a Maven project containing `pom.xml` and Java source code.
+3. Test the project using Maven.
+4. Create a GitHub repository.
+5. Push the Maven project to GitHub.
+6. Install/configure Maven in Jenkins.
+7. Create a Jenkins Pipeline job.
+8. Connect Jenkins to the GitHub repository.
+9. Create a `Jenkinsfile`.
+10. Define Checkout, Compile, Test, and Package stages.
+11. Execute the Jenkins Pipeline.
+12. Verify `BUILD SUCCESS` in the console.
+
+**Result:**  
+The Maven project was successfully integrated with Jenkins, and the build, test, and packaging processes were automated using a Jenkins Pipeline.
